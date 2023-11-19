@@ -1,6 +1,7 @@
 from browser_handlers import WB_BROWSER
 from excel_handlers import EXCEL_PARSER
 from excel_handlers import EXCEL_REPORT
+from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 import time
@@ -25,24 +26,24 @@ ERRORS_DICT = {
 
 
 class MANAGE_SCRIPT():
-    def __init__(self, max_pages=25, target_profile='') -> None:
+    def __init__(self, max_pages=25, target_profile='', headless=False) -> None:
         self.fail_profiles = []
         self.wb_browser = ''
         self.report = EXCEL_REPORT()
         self.error_count = 0
         self.max_pages = max_pages
         self.target_profile = target_profile
+        self.headless = headless
 
-    def autobasket_for_one_product(self, info):
+    def autobasket_for_one_product(self, info, headless=False):
         try:
-            print('INFO IN AUTO')
-            print(info)
             profile_id:int = info[1]
-            wb_browser:WB_BROWSER = WB_BROWSER(profile_id=profile_id,)
+            wb_browser:WB_BROWSER = WB_BROWSER(profile_id=profile_id, headless=self.headless)
             self.wb_browser = wb_browser
             self.wb_browser.initial_selenium_browser()
 
             if self.wb_browser.browser == False or self.wb_browser.browser == '':
+                print('Вернул 105 статус')
                 return {'status': 105}
                 
             time.sleep(1.5)
@@ -59,7 +60,6 @@ class MANAGE_SCRIPT():
             except Exception as ex:
                     if str(ex) == 'STOP':
                         raise Exception('STOP')
-                    print('autobasket_for_one_product IN')
                     print(traceback.format_exc())
                     self.stop()
                     return {'status': 104}
@@ -82,25 +82,31 @@ class MANAGE_SCRIPT():
             
             if add_item_in_basket.product_in_basket():
                 self.stop()
+                print('stop - complate')
                 result = [item for item in info if item != None]
                 
                 result.append('OK')
                 self.report.add_product(result)
+                print('report - complate')
+
                 return {'status': 100}
             else:
                 self.stop()
                 return {'status': 103} 
         except Exception as ex:
             print(traceback.format_exc())
-            print('autobasket_for_one_product')
             return 106
 
     def start__process(self,all_info):
-        print(all_info)
         i = 0
         while i < len(all_info):
             info = all_info[i]
             autobasket = self.autobasket_for_one_product(info)
+            if autobasket != 106:
+                print('В перовм цикле получил: ' + str(autobasket['status']))
+            else:
+                print('В перовм цикле получил: ' + str(autobasket))
+            print('autobasket - complate')
 
             if autobasket == 106:
                 self.fail_profiles.append(info)
@@ -110,10 +116,9 @@ class MANAGE_SCRIPT():
             if autobasket['status'] == 103:
                 if self.error_count == 0:
                     self.error_count += 1
-                    try:
-                        self.wb_browser.browser.quit()
-                    except:
-                        pass
+                if type(self.wb_browser.browser) == webdriver:
+                    self.wb_browser.browser.quit()
+                    print('quit - complate')
 
                     print(103)
                     continue
@@ -121,36 +126,35 @@ class MANAGE_SCRIPT():
                     result = [item for item in info if item != None]
                     result.append(f'Ошибка: не добавлен в корзину')
                     self.report.add_product(result)
-                    try:
-                        self.wb_browser.browser.quit()
-                    except:
-                        pass
+                if type(self.wb_browser.browser) == webdriver:
+                    self.wb_browser.browser.quit()
+                    print('quit - complate')
                     i += 1
 
             if autobasket['status'] == 104:
                 self.fail_profiles.append(info)
-                try:
+                print(info[4])
+                if type(self.wb_browser.browser) == webdriver:
                     self.wb_browser.browser.quit()
-                except:
-                    pass
+                    print('quit - complate')
                 print(104)
                 i += 1
+                continue
 
             if autobasket['status'] == 105:
+                print('Обрабатываю 105 статус в первом цикле')
                 self.fail_profiles.append(info)
 
-                try:
+                if type(self.wb_browser.browser) == webdriver:
                     self.wb_browser.browser.quit()
-                except:
-                    pass
+                    print('quit - complate')
 
                 print(105)
                 i += 1
             else:
-                try:
+                if type(self.wb_browser.browser) == webdriver:
                     self.wb_browser.browser.quit()
-                except:
-                    pass
+                    print('quit - complate')
                 i += 1
 
     def start(self):
@@ -158,8 +162,6 @@ class MANAGE_SCRIPT():
 
         if self.target_profile != '':
             all_info = [self.target_profile]
-            print('TRANSFORM ALL INFO')
-            print(all_info)
         else:
             excel_parser:excel_parser = EXCEL_PARSER()
             all_info = excel_parser.get_values()
@@ -179,8 +181,8 @@ class MANAGE_SCRIPT():
             work_proxy = None
             i = 0
             status = 106
-            while i < len(self.fail_profiles):
-                profile = self.fail_profiles[i]
+            while len(self.fail_profiles) > 0:
+                profile = self.fail_profiles[0]
                 print(f'profile {i}')
                 if work_proxy == None:
                     for proxy_id in all_proxys_id:
@@ -189,72 +191,84 @@ class MANAGE_SCRIPT():
                             self.wb_browser.change_proxy_for_target_profile({'proxy[id]':proxy_id}, profile[1])
 
                             autobasket_for_one_product = self.autobasket_for_one_product(profile)
+                            print('PN')
                             if autobasket_for_one_product == 106:
-                                print('ERROR_IN_SEARCH_ELEMENT')
-                                try:
+                                if type(self.wb_browser.browser) == webdriver:
                                     self.wb_browser.browser.quit()
-                                except:
-                                    pass
+                                    print('quit - complate')
+                                print('106 во втором')
                                 continue
                             status = autobasket_for_one_product['status']
                             if status == 105:
-                                try:
+                                print('PN:105')
+                                if type(self.wb_browser.browser) == webdriver:
                                     self.wb_browser.browser.quit()
-                                except:
-                                    pass
-                                continue
-
-                            if status != 104:
-                                work_proxy = proxy_id
-                                j = False
+                                    print('quit - complate')
                                 break
 
-                            try:
-                                self.wb_browser.browser.quit()
-                            except:
-                                pass
+                            if status in [100,101,102]:
+                                print('PN:OK')
+                                work_proxy = proxy_id
+                                j = False
+                                i += 1
+                                self.fail_profiles.remove(profile)
+                                break
+
+                            if type(self.wb_browser.browser) == webdriver:
+                                    self.wb_browser.browser.quit()
+                                    print('quit - complate')
                             j = False
                             continue
-   
-                        if status != 104:
+                        if status in [100,101,102]:
                             break
-                    try:
-                        self.wb_browser.browser.quit()
-                    except:
-                        pass
-                    i += 1
                 else:
+
                     self.wb_browser.change_proxy_for_target_profile({'proxy[id]':work_proxy}, profile[1])
                     status = ''
                     j = True
                     while j:
+                        print('PT')
                         try:
                             autobasket_for_one_product = self.autobasket_for_one_product(profile)
                             status = autobasket_for_one_product['status']
                             if status == 105:
+                                print('PT: 105')
                                 time.sleep(0.5)
                                 print('Профиль недостпуен, пытаюсь подключиться...')
                                 continue
 
                             if status == 104:
+                                print('PT: 104')
                                 work_proxy = None
                                 j = False
                                 continue
-                            else:
-                                break
+
                         except Exception as ex:
-                            print('continue')
                             continue
                     
+                    if status == 102:
+                        print('PT: 102')
+                        i += 1
+                        self.fail_profiles.remove(profile)
+                        continue
+                    
                     if status == 103:
+                        print('PT: 103')
                         result = [item for item in profile if item != None]
                         result.append(f'Ошибка: не добавлен в корзину')
                         self.report.add_product(result)
                         i += 1
                         j = False
+                        self.fail_profiles.remove(profile)
                     else:
+                        # if len(self.fail_profiles) == 1:
+                        #     print('CLOSE - complate 100 or 101')
+                        #     self.wb_browser.browser.quit()
+                        #     break
+                        print('PT: 101,103')
+                        self.fail_profiles.remove(profile)
                         i += 1
-                        j = False
+                        continue
 
     def stop(self):
         self.wb_browser.stop()
@@ -279,7 +293,6 @@ class ADD_ITEM_IN_BASKET():
         except Exception as ex:
             if str(ex) == 'STOP':
                 raise Exception('STOP')
-            print('search')
             return False
         
         while text_in_search:
@@ -347,17 +360,14 @@ class ADD_ITEM_IN_BASKET():
         for size in sizes:
             label = size.find_element(By.TAG_NAME, 'label')
             if label.find_element(By.CLASS_NAME, 'sizes-list__size').text == str(self.size):
-                print(label.find_element(By.CLASS_NAME, 'sizes-list__size').text == str(self.size))
                 label_classes = label.get_attribute('class')
                 if  (len(label_classes.split(' ')) == 2 or label_classes == 'j-size sizes-list__button active') and label_classes != 'j-size sizes-list__button disabled':
-                    print(label_classes != 'j-size sizes-list__button disabled')
                     label.click()
 
                     self.wb_browser.browser.find_elements(By.CLASS_NAME, 'btn-main')[4].click()
                     time.sleep(1)
                     return True
                 else:
-                    print('1')
                     continue
         return False
     
@@ -391,7 +401,6 @@ class ADD_ITEM_IN_BASKET():
         except Exception as ex:
             if str(ex) == 'STOP':
                 raise Exception('STOP')
-            print('max')
             return 'max'
     
     def product_in_basket(self):
@@ -414,25 +423,30 @@ class ADD_ITEM_IN_BASKET():
             time.sleep(randrange(1,3))
 
     def check_reviews(self):
-        self.wb_browser.browser.execute_script('window.scrollTo(0, 1350)')
-        time.sleep(5)
-        reviews_wraper = self.wb_browser.browser.find_elements(By.CLASS_NAME, 'swiper-wrapper')[2]
-        review = reviews_wraper.find_element(By.TAG_NAME, 'div')
-        review.click()
-        time.sleep(randrange(1,2))
-        next_button = self.wb_browser.browser.find_element(By.CLASS_NAME, 'swiper-button-next')
-        for i in range(2):
-            next_button.click()
+        try:
+            self.wb_browser.browser.execute_script('window.scrollTo(0, 1350)')
+            time.sleep(1)
+            reviews_wraper = self.wb_browser.browser.find_elements(By.CLASS_NAME, 'swiper-wrapper')[2]
+            review = reviews_wraper.find_element(By.TAG_NAME, 'div')
+            review.click()
             time.sleep(randrange(1,2))
-        
-        self.wb_browser.browser.find_element(By.CLASS_NAME, 'popup__close').click()
-        time.sleep(1)
-        self.wb_browser.browser.execute_script('window.scrollTo(0, 200)')
+            next_button = self.wb_browser.browser.find_element(By.CLASS_NAME, 'swiper-button-next')
+            for i in range(2):
+                next_button.click()
+                time.sleep(randrange(1,2))
+            
+            self.wb_browser.browser.find_element(By.CLASS_NAME, 'popup__close').click()
+            time.sleep(1)
+            self.wb_browser.browser.execute_script('window.scrollTo(0, 200)')
+        except:
+            self.wb_browser.browser.execute_script('window.scrollTo(0, 200)')
+            
 
     def check_reviews_text(self):
         scroll_y = 1500
 
         self.wb_browser.browser.execute_script(f'window.scrollTo(0, {scroll_y})')
+        time.sleep(1)
         comment_card = self.wb_browser.browser.find_element(By.CLASS_NAME, 'comment-card')
         self.wb_browser.browser.execute_script('arguments[0].scrollIntoView();', comment_card)
         time.sleep(0.5)
@@ -443,7 +457,10 @@ class ADD_ITEM_IN_BASKET():
             self.wb_browser.browser.execute_script(f'window.scrollTo(0, {scroll_y})')
             scroll_y += 200
             time.sleep(0.4)
-
+        wait: WebDriverWait = WebDriverWait(self.wb_browser.browser, 10, poll_frequency=0.1)
+        element = wait.until(EC.visibility_of_element_located(
+            (By.CLASS_NAME, 'product-feedbacks__back')
+        ))
         back_button = self.wb_browser.browser.find_element(By.CLASS_NAME, 'product-feedbacks__back')
         back_button.click()
         self.wb_browser.browser.execute_script(f'window.scrollTo(0, 0)')
@@ -457,9 +474,6 @@ class ADD_ITEM_IN_BASKET():
                 photo.click()
                 time.sleep(0.4)
             except Exception as ex:
-                if str(ex) == 'STOP':
-                    raise Exception('STOP')
-                print('check_product_photos')
                 continue
 
 if __name__ == '__main__':

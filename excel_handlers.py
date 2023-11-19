@@ -1,6 +1,6 @@
 import openpyxl
 from openpyxl import Workbook
-
+import time
 
 class EXCEL_PARSER():
     def __init__(self, book_name='info.xlsx') -> None:
@@ -45,7 +45,12 @@ class EXCEL_REPORT():
         return wb
     
     def add_product(self, info):
-        target_book = self.get_target_book()
+        try:
+            target_book = self.get_target_book()
+        except:
+            time.sleep(2)
+            target_book = self.get_target_book()
+            
         target_book.active.cell(target_book.active.max_row+2, column=1).value = self.count_product+1
         target_book.save('Отчет.xlsx')
         target_book.active.cell(target_book.active.max_row, column=2).value = info[1]

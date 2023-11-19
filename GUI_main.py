@@ -2,21 +2,39 @@ import tkinter
 from tkinter import *
 from tkinter import ttk
 from multiprocessing import Pool, Process
+from typing import Any
 import psutil
 from threading import Thread
 from excel_handlers import *
-import time
 import sys
 
 from manage import MANAGE_SCRIPT
 
 
-def start_autobasket(max_pages_entry='', target_profile=''):
+def start_autobasket(max_pages_entry='', target_profile='', headless=False):
     
     if max_pages_entry: max_pages_entry = int(max_pages_entry)
 
-    manage_script = MANAGE_SCRIPT(max_pages=int(max_pages_entry), target_profile=target_profile )
+    manage_script = MANAGE_SCRIPT(max_pages=int(max_pages_entry), target_profile=target_profile, headless=headless)
     manage_script.start()
+
+class CheckbuttonVar(ttk.Checkbutton):
+    def __init__(self, *args, **kwargs):
+        self._var = tkinter.BooleanVar()
+        self.is_checked = False
+        super().__init__(*args, variable=self._var, **kwargs)
+
+    def invoke(self) -> Any:
+        self.is_checked = not self.is_checked
+        return super().invoke()
+
+    @property
+    def is_checked(self):
+        return self._var.get()
+
+    @is_checked.setter
+    def is_checked(self, value):
+        self._var.set(value)
 
 class HackThread(Thread):
     def __init__(self, *args, **keywords):
@@ -111,7 +129,7 @@ class WB_PROMOTER(tkinter.Frame):
         self.label_setting_browser_hidden= ttk.Label(text='Показать браузер:')
         self.label_setting_browser_hidden.place(x=x, y=y+50)
 
-        self.entry_setting_browser_hidden = ttk.Checkbutton(width=10)
+        self.entry_setting_browser_hidden = CheckbuttonVar(width=10)
         self.entry_setting_browser_hidden.place(x=x+140, y=y+50)
 
         self.label_setting_pages = ttk.Label(text='Мониторинг страниц товара (макс):')
@@ -136,7 +154,7 @@ class WB_PROMOTER(tkinter.Frame):
                         self.master.btn_load2.config(state=tkinter.NORMAL)                        
                         return
                     
-                    thread = Thread(self.loading_body(list(self.infos[0])))
+                    thread = HackThread(self.loading_body(list(self.infos[0])))
                     thread.start()
 
                     self.threads.append(thread)
@@ -193,13 +211,15 @@ class WB_PROMOTER(tkinter.Frame):
         self.master.btn_load2.config(state=tkinter.NORMAL)
 
     def loading_body(self, info=''):
+            headless = self.entry_setting_browser_hidden.is_checked
+            print(headless)
             if info:
-                thread = HackThread(name='loading_body',kwargs={'max_pages_entry': self.entry_setting_pages.get(), 'target_profile': info}, target=start_autobasket)
+                thread = HackThread(name='loading_body',kwargs={'max_pages_entry': self.entry_setting_pages.get(), 'target_profile': info, 'headless':headless}, target=start_autobasket)
                 self.threads.append(thread)
                 thread.start()
                 print('async')
             else:
-                thread = HackThread(name='loading_body',kwargs={'max_pages_entry': self.entry_setting_pages.get()}, target=start_autobasket)
+                thread = HackThread(name='loading_body',kwargs={'max_pages_entry': self.entry_setting_pages.get(), 'headless':headless}, target=start_autobasket)
                 self.process.append(thread)
                 thread.start()
 

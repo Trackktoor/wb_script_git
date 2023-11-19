@@ -34,18 +34,16 @@ class WB_BROWSER():
     
     # SELENIUM METHODS
     def initial_selenium_browser(self) -> webdriver.Chrome:
-        while True:
-            try:
-                service = Service('chromedriver-windows-x64.exe')
-                response = self.start_doplhin_profile()
-                print(response)
-                port = response['automation']['port']
-                break
-            except Exception as ex:
-                if str(ex) == 'STOP':
-                    raise Exception('STOP')
-                print('1')
-                return False
+        try:
+            service = Service('chromedriver-windows-x64.exe')
+            response = self.start_doplhin_profile()
+            print(response)
+            port = response['automation']['port']
+        except Exception as ex:
+            if str(ex) == 'STOP':
+                raise Exception('STOP')
+            print('1')
+            return False
 
         options = webdriver.ChromeOptions()
         options.debugger_address = f'127.0.0.1:{port}'
