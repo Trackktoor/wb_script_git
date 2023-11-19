@@ -6,6 +6,7 @@ import psutil
 from threading import Thread
 from excel_handlers import *
 import time
+import sys
 
 from manage import MANAGE_SCRIPT
 
@@ -17,11 +18,45 @@ def start_autobasket(max_pages_entry='', target_profile=''):
     manage_script = MANAGE_SCRIPT(max_pages=int(max_pages_entry), target_profile=target_profile )
     manage_script.start()
 
+class HackThread(Thread):
+    def __init__(self, *args, **keywords):
+        Thread.__init__(self, *args, **keywords)
+        self.killed = False
+
+    def start(self):
+        """Start the thread."""
+        self.__run_backup = self.run
+        self.run = self.__run # Force the Thread to install our trace.
+        Thread.start(self)
+    
+    def __run(self):
+        """Hacked run function, which installs the
+        trace."""
+        sys.settrace(self.globaltrace)
+        self.__run_backup()
+        self.run = self.__run_backup
+
+    def globaltrace(self, frame, why, arg):
+        if why == 'call':
+            return self.localtrace
+        else:
+            return None
+
+    def localtrace(self, frame, why, arg):
+        if self.killed:
+            if why == 'line':
+                raise SystemExit()
+            return self.localtrace
+
+    def kill(self):
+        self.killed = True
+
 class WB_PROMOTER(tkinter.Frame):
     def __init__(self, master):
         super().__init__(master)
 
         self.process = []
+        self.threads = []
 
         self.max_pages = 25
         self.master = master
@@ -89,7 +124,7 @@ class WB_PROMOTER(tkinter.Frame):
 
     def threads_of_multiprocessing(self,number_of_accounts):
         while len(self.infos) != 0:
-            while len(list(filter(lambda proces: proces.is_alive() == True,self.process))) != 0:
+            while len(list(filter(lambda thread: thread.is_alive() == True,self.threads))) != 0:
                 if len(self.infos) == 0:
                     self.master.btn_load2.config(text='Старт')
                     self.master.btn_load2.config(state=tkinter.NORMAL)
@@ -100,14 +135,19 @@ class WB_PROMOTER(tkinter.Frame):
                         self.master.btn_load2.config(text='Старт')
                         self.master.btn_load2.config(state=tkinter.NORMAL)                        
                         return
-                    Thread(self.loading_body(list(self.infos[0]))).start()
+                    
+                    thread = Thread(self.loading_body(list(self.infos[0])))
+                    thread.start()
+
+                    self.threads.append(thread)
                     self.infos.remove(self.infos[0])
 
-            while len(list(filter(lambda proces: proces.is_alive(),self.process))) != 0:
+            while len(list(filter(lambda thread: thread.is_alive(),self.threads))) != 0:
                 if len(self.infos) == 0:
                     self.master.btn_load2.config(text='Старт')
                     self.master.btn_load2.config(state=tkinter.NORMAL)                    
                     return
+                
         self.master.btn_load2.config(text='Старт')
         self.master.btn_load2.config(state=tkinter.NORMAL)
 
@@ -125,21 +165,20 @@ class WB_PROMOTER(tkinter.Frame):
                 threads[i].start()
                 self.infos.remove(self.infos[0])
                 
-            Thread(target=self.threads_of_multiprocessing,
+            HackThread(target=self.threads_of_multiprocessing,
                 kwargs={
                     'number_of_accounts':int(self.entry_setting_accounts.get())}
                 ).start()
+            
         else:
             self.loading_body()
 
     def stop_thread(self):
         self.infos = []
-        for proces in self.process:
-            proces.terminate()
-
-        print('stop_process')
-        self.master.btn_load2.config(text='Старт')
-        self.master.btn_load2.config(state=tkinter.NORMAL)
+        # for proces in self.process:
+        #     proces.terminate()
+        for thread in self.threads:
+            thread.kill()
 
         for proc in psutil.process_iter(attrs=['pid', 'name']):
             if 'anty.exe' in proc.info['name']:
@@ -149,17 +188,20 @@ class WB_PROMOTER(tkinter.Frame):
             if 'chromedriver-windows-x64.exe' in proc.info['name']:
                 proc.terminate()
 
+        print('stop_process')
+        self.master.btn_load2.config(text='Старт')
+        self.master.btn_load2.config(state=tkinter.NORMAL)
 
     def loading_body(self, info=''):
             if info:
-                proces = Process(kwargs={'max_pages_entry': self.entry_setting_pages.get(), 'target_profile': info}, target=start_autobasket, daemon=True)
-                self.process.append(proces)
-                proces.start()
+                thread = HackThread(name='loading_body',kwargs={'max_pages_entry': self.entry_setting_pages.get(), 'target_profile': info}, target=start_autobasket)
+                self.threads.append(thread)
+                thread.start()
                 print('async')
             else:
-                proces = Process(kwargs={'max_pages_entry': self.entry_setting_pages.get()}, target=start_autobasket, daemon=True)
-                self.process.append(proces)
-                proces.start()
+                thread = HackThread(name='loading_body',kwargs={'max_pages_entry': self.entry_setting_pages.get()}, target=start_autobasket)
+                self.process.append(thread)
+                thread.start()
 
 
 if __name__ == '__main__':

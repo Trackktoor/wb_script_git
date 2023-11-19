@@ -110,24 +110,47 @@ class MANAGE_SCRIPT():
             if autobasket['status'] == 103:
                 if self.error_count == 0:
                     self.error_count += 1
+                    try:
+                        self.wb_browser.browser.quit()
+                    except:
+                        pass
+
                     print(103)
                     continue
                 else:
                     result = [item for item in info if item != None]
                     result.append(f'Ошибка: не добавлен в корзину')
                     self.report.add_product(result)
+                    try:
+                        self.wb_browser.browser.quit()
+                    except:
+                        pass
                     i += 1
 
             if autobasket['status'] == 104:
                 self.fail_profiles.append(info)
+                try:
+                    self.wb_browser.browser.quit()
+                except:
+                    pass
                 print(104)
                 i += 1
 
             if autobasket['status'] == 105:
                 self.fail_profiles.append(info)
+
+                try:
+                    self.wb_browser.browser.quit()
+                except:
+                    pass
+
                 print(105)
                 i += 1
             else:
+                try:
+                    self.wb_browser.browser.quit()
+                except:
+                    pass
                 i += 1
 
     def start(self):
@@ -168,20 +191,37 @@ class MANAGE_SCRIPT():
                             autobasket_for_one_product = self.autobasket_for_one_product(profile)
                             if autobasket_for_one_product == 106:
                                 print('ERROR_IN_SEARCH_ELEMENT')
+                                try:
+                                    self.wb_browser.browser.quit()
+                                except:
+                                    pass
                                 continue
                             status = autobasket_for_one_product['status']
                             if status == 105:
+                                try:
+                                    self.wb_browser.browser.quit()
+                                except:
+                                    pass
                                 continue
 
                             if status != 104:
                                 work_proxy = proxy_id
                                 j = False
                                 break
+
+                            try:
+                                self.wb_browser.browser.quit()
+                            except:
+                                pass
                             j = False
                             continue
    
                         if status != 104:
                             break
+                    try:
+                        self.wb_browser.browser.quit()
+                    except:
+                        pass
                     i += 1
                 else:
                     self.wb_browser.change_proxy_for_target_profile({'proxy[id]':work_proxy}, profile[1])
@@ -203,8 +243,6 @@ class MANAGE_SCRIPT():
                             else:
                                 break
                         except Exception as ex:
-                            if str(ex) == 'STOP':
-                                raise Exception('STOP')
                             print('continue')
                             continue
                     
@@ -287,9 +325,12 @@ class ADD_ITEM_IN_BASKET():
     def add_product_in_basket(self, product):
         time.sleep(1)
         product.click()
-        time.sleep(4)
+        time.sleep(3)
         while True:
             try:
+                self.wb_browser.browser.execute_script('window.scrollTo(0,0)')
+                time.sleep(1)
+
                 self.check_characteristics()
                 self.check_reviews()
                 self.check_reviews_text()
@@ -298,6 +339,7 @@ class ADD_ITEM_IN_BASKET():
                 sizes = size_list.find_elements(By.TAG_NAME, 'li')
                 break
             except:
+                print(traceback.format_exc())
                 self.wb_browser.browser.refresh()
                 time.sleep(4)
                 continue
