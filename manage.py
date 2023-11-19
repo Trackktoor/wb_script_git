@@ -17,7 +17,7 @@ import traceback
 ERRORS_DICT = {
     100: 'OK',
     101: 'Нет нужного размера',
-    102: 'Продукт не найден на страницах ',
+    102: 'Продукт не найден на страницах',
     103: 'Не добавлен в корзину',
     104: 'Плохой прокси',
     105: 'Аккаунт ещё не успел встать',
@@ -37,8 +37,8 @@ class MANAGE_SCRIPT():
 
     def autobasket_for_one_product(self, info, headless=False):
         try:
-            profile_id:int = info[1]
-            wb_browser:WB_BROWSER = WB_BROWSER(profile_id=profile_id, headless=self.headless)
+            profile_name:str = info[1]
+            wb_browser:WB_BROWSER = WB_BROWSER(profile_name=profile_name, headless=self.headless)
             self.wb_browser = wb_browser
             self.wb_browser.initial_selenium_browser()
 
@@ -83,6 +83,7 @@ class MANAGE_SCRIPT():
             if add_item_in_basket.product_in_basket():
                 self.stop()
                 print('stop - complate')
+                if info[4] == None: info[4]=''
                 result = [item for item in info if item != None]
                 
                 result.append('OK')
@@ -162,6 +163,7 @@ class MANAGE_SCRIPT():
 
         if self.target_profile != '':
             all_info = [self.target_profile]
+            print(all_info)
         else:
             excel_parser:excel_parser = EXCEL_PARSER()
             all_info = excel_parser.get_values()
@@ -174,7 +176,7 @@ class MANAGE_SCRIPT():
         
         # Цикл на обработу ошибок
         if len(self.fail_profiles) != 0:
-            wb_browser:WB_BROWSER = WB_BROWSER(profile_id='')
+            wb_browser:WB_BROWSER = WB_BROWSER(profile_name='')
             self.wb_browser = wb_browser
             self.wb_browser.get_all_proxy()
             all_proxys_id = [proxy['id'] for proxy in self.wb_browser.get_all_proxy()]
@@ -188,7 +190,7 @@ class MANAGE_SCRIPT():
                     for proxy_id in all_proxys_id:
                         j = True
                         while j:
-                            self.wb_browser.change_proxy_for_target_profile({'proxy[id]':proxy_id}, profile[1])
+                            self.wb_browser.change_proxy_for_target_profile({'proxy[id]':proxy_id}, wb_browser.get_profile_id_on_profile_name(profile[1]))
 
                             autobasket_for_one_product = self.autobasket_for_one_product(profile)
                             print('PN')
@@ -201,10 +203,12 @@ class MANAGE_SCRIPT():
                             status = autobasket_for_one_product['status']
                             if status == 105:
                                 print('PN:105')
+                                print('proxy_id:'+str(proxy_id))
                                 if type(self.wb_browser.browser) == webdriver:
                                     self.wb_browser.browser.quit()
                                     print('quit - complate')
-                                break
+                                j = False
+                                continue
 
                             if status in [100,101,102]:
                                 print('PN:OK')
@@ -348,8 +352,9 @@ class ADD_ITEM_IN_BASKET():
                 self.check_reviews()
                 self.check_reviews_text()
                 self.check_product_photos()
-                size_list = self.wb_browser.browser.find_elements(By.CLASS_NAME, 'sizes-list')[0]
-                sizes = size_list.find_elements(By.TAG_NAME, 'li')
+                if self.size != None:
+                    size_list = self.wb_browser.browser.find_elements(By.CLASS_NAME, 'sizes-list')[0]
+                    sizes = size_list.find_elements(By.TAG_NAME, 'li')
                 break
             except:
                 print(traceback.format_exc())
@@ -357,18 +362,24 @@ class ADD_ITEM_IN_BASKET():
                 time.sleep(4)
                 continue
 
-        for size in sizes:
-            label = size.find_element(By.TAG_NAME, 'label')
-            if label.find_element(By.CLASS_NAME, 'sizes-list__size').text == str(self.size):
-                label_classes = label.get_attribute('class')
-                if  (len(label_classes.split(' ')) == 2 or label_classes == 'j-size sizes-list__button active') and label_classes != 'j-size sizes-list__button disabled':
-                    label.click()
+        if self.size != None:
+            for size in sizes:
+                label = size.find_element(By.TAG_NAME, 'label')
+                if label.find_element(By.CLASS_NAME, 'sizes-list__size').text == str(self.size):
+                    label_classes = label.get_attribute('class')
+                    if  (len(label_classes.split(' ')) == 2 or label_classes == 'j-size sizes-list__button active') and label_classes != 'j-size sizes-list__button disabled':
+                        label.click()
 
-                    self.wb_browser.browser.find_elements(By.CLASS_NAME, 'btn-main')[4].click()
-                    time.sleep(1)
-                    return True
-                else:
-                    continue
+                        self.wb_browser.browser.find_elements(By.CLASS_NAME, 'btn-main')[4].click()
+                        time.sleep(1)
+                        return True
+                    else:
+                        continue
+        else:
+            self.wb_browser.browser.find_elements(By.CLASS_NAME, 'btn-main')[4].click()
+            time.sleep(1)
+            return True
+        
         return False
     
     def find_current_product(self):

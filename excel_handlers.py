@@ -50,7 +50,9 @@ class EXCEL_REPORT():
         except:
             time.sleep(2)
             target_book = self.get_target_book()
-            
+        
+        if info[4] == None: info[4] = ''
+
         target_book.active.cell(target_book.active.max_row+2, column=1).value = self.count_product+1
         target_book.save('Отчет.xlsx')
         target_book.active.cell(target_book.active.max_row, column=2).value = info[1]

@@ -44,7 +44,7 @@ class HackThread(Thread):
     def start(self):
         """Start the thread."""
         self.__run_backup = self.run
-        self.run = self.__run # Force the Thread to install our trace.
+        self.run = self.__run 
         Thread.start(self)
     
     def __run(self):
@@ -193,8 +193,7 @@ class WB_PROMOTER(tkinter.Frame):
 
     def stop_thread(self):
         self.infos = []
-        # for proces in self.process:
-        #     proces.terminate()
+
         for thread in self.threads:
             thread.kill()
 
