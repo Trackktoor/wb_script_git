@@ -6,7 +6,11 @@ from typing import Any
 import psutil
 from threading import Thread
 from excel_handlers import *
+from tkinter import filedialog
+import tkinter.messagebox as mb
 import sys
+import os
+import shutil
 
 from manage import MANAGE_SCRIPT
 
@@ -88,22 +92,22 @@ class WB_PROMOTER(tkinter.Frame):
         master.window_title = ttk.Label(font=18,text='WB PROMOTER')
         master.window_title.pack(pady=20)
 
-        master.btn_load1 = ttk.Button(text='Загрузить ТЗ Excel')
+        master.btn_load1 = ttk.Button(text='Загрузить ТЗ Excel', command=self.load_tz)
         master.btn_load1.place(x=50, y=100, height=50)
 
-        master.excel_template_link = Button(text='Шаблон для ТЗ', bg=self.cget('background'),fg='blue',borderwidth=0)
+        master.excel_template_link = Button(text='Шаблон для ТЗ', bg=self.cget('background'),fg='blue',borderwidth=0, command=self.open_this_directory)
         master.excel_template_link.place(x=50, y=158)
 
         """  
             Чтобы открыть папку:
             def foo():
-                os.system("start explorer C:/Users/evamo/Documents/")
+                os.system("start explorer ./")
         """
 
         master.btn_load2 = ttk.Button(text='Старт', command=self.start_loading,)
         master.btn_load2.place(x=300, y=100, height=50)
 
-        master.btn_load3 = ttk.Button(text='Отчет')
+        master.btn_load3 = ttk.Button(text='Отчет', command=self.open_this_directory)
         master.btn_load3.place(x=50, y=200, height=50)
 
         master.btn_load4 = ttk.Button(text='Стоп', command=self.stop_thread)
@@ -113,11 +117,25 @@ class WB_PROMOTER(tkinter.Frame):
 
         self.settings_initial(450, 100)
 
+    def open_this_directory(self):
+        os.system(f"start explorer {os.getcwd()}")
+
+    
     def terminate_thread(self):
-        if not self.process.is_alive():
+        if not self.process.is_alive(): 
             return
 
         self.process.close()
+
+    def load_tz(self):
+        filepath = filedialog.askopenfilename()
+        if filepath == '':
+            mb.showerror('Ошибка', 'Вы не выбрали файл!')
+        try:
+            shutil.copy2(filepath, 'info.xlsx')
+        except:
+            os.remove('info.xlsx')
+            shutil.copy2(filepath, 'info.xlsx') 
 
     def settings_initial(self,x,y):
         self.label_setting_accounts = ttk.Label(text='Количество аккаунтов:')
@@ -211,12 +229,10 @@ class WB_PROMOTER(tkinter.Frame):
 
     def loading_body(self, info=''):
             headless = self.entry_setting_browser_hidden.is_checked
-            print(headless)
             if info:
                 thread = HackThread(name='loading_body',kwargs={'max_pages_entry': self.entry_setting_pages.get(), 'target_profile': info, 'headless':headless}, target=start_autobasket)
                 self.threads.append(thread)
                 thread.start()
-                print('async')
             else:
                 thread = HackThread(name='loading_body',kwargs={'max_pages_entry': self.entry_setting_pages.get(), 'headless':headless}, target=start_autobasket)
                 self.process.append(thread)

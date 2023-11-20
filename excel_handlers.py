@@ -45,25 +45,28 @@ class EXCEL_REPORT():
         return wb
     
     def add_product(self, info):
-        try:
-            target_book = self.get_target_book()
-        except:
-            time.sleep(2)
-            target_book = self.get_target_book()
+        while True:
+            try:
+                target_book = self.get_target_book()
+
+                target_book = self.get_target_book()
         
-        if info[4] == None: info[4] = ''
+                if info[4] == None: info[4] = ''
 
-        target_book.active.cell(target_book.active.max_row+2, column=1).value = self.count_product+1
-        target_book.save('Отчет.xlsx')
-        target_book.active.cell(target_book.active.max_row, column=2).value = info[1]
-        target_book.active.cell(target_book.active.max_row, column=3).value = info[2]
-        target_book.active.cell(target_book.active.max_row, column=4).value = info[3]
-        target_book.active.cell(target_book.active.max_row, column=5).value = info[4]
-        target_book.active.cell(target_book.active.max_row, column=6).value = info[5]
-        target_book.active.cell(target_book.active.max_row, column=7).value = info[6]
-        target_book.save('Отчет.xlsx')
-        self.count_product += 1
-
+                target_book.active.cell(target_book.active.max_row+1, column=1).value = self.count_product+1
+                target_book.save('Отчет.xlsx')
+                target_book.active.cell(target_book.active.max_row, column=2).value = info[1]
+                target_book.active.cell(target_book.active.max_row, column=3).value = info[2]
+                target_book.active.cell(target_book.active.max_row, column=4).value = info[3]
+                target_book.active.cell(target_book.active.max_row, column=5).value = info[4]
+                target_book.active.cell(target_book.active.max_row, column=6).value = info[5]
+                target_book.active.cell(target_book.active.max_row, column=7).value = info[6]
+                target_book.save('Отчет.xlsx')
+                self.count_product += 1
+                break
+            except:
+                time.sleep(2)
+                continue
 if __name__ == '__main__':
     # book = EXCEL_REPORT()
     # book.create_book()

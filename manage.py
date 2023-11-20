@@ -40,10 +40,11 @@ class MANAGE_SCRIPT():
             profile_name:str = info[1]
             wb_browser:WB_BROWSER = WB_BROWSER(profile_name=profile_name, headless=self.headless)
             self.wb_browser = wb_browser
-            self.wb_browser.initial_selenium_browser()
+            self.wb_browser.initial_selenium_browser(profile_name=profile_name)
 
             if self.wb_browser.browser == False or self.wb_browser.browser == '':
                 print('Вернул 105 статус')
+                self.wb_browser.stop_doplhin_profile()
                 return {'status': 105}
                 
             time.sleep(1.5)
@@ -73,6 +74,9 @@ class MANAGE_SCRIPT():
             
             product_added = add_item_in_basket.add_product_in_basket(product)
 
+            if type(product_added) == {}:
+                return {'status': 104}
+
             if not product_added:
                 result = [item for item in info if item != None]
                 result.append('Ошибка: Нет нужного размера')
@@ -93,13 +97,14 @@ class MANAGE_SCRIPT():
                 return {'status': 100}
             else:
                 self.stop()
-                return {'status': 103} 
+                return {'status': 105} 
         except Exception as ex:
             print(traceback.format_exc())
             return 106
 
     def start__process(self,all_info):
         i = 0
+        print(all_info)
         while i < len(all_info):
             info = all_info[i]
             autobasket = self.autobasket_for_one_product(info)
@@ -113,11 +118,13 @@ class MANAGE_SCRIPT():
                 self.fail_profiles.append(info)
                 i += 1
                 print(106)
+                if self.wb_browser.browser != '':
+                    self.wb_browser.browser.quit()
                 continue
             if autobasket['status'] == 103:
                 if self.error_count == 0:
                     self.error_count += 1
-                if type(self.wb_browser.browser) == webdriver:
+                if self.wb_browser.browser != '':
                     self.wb_browser.browser.quit()
                     print('quit - complate')
 
@@ -127,9 +134,8 @@ class MANAGE_SCRIPT():
                     result = [item for item in info if item != None]
                     result.append(f'Ошибка: не добавлен в корзину')
                     self.report.add_product(result)
-                if type(self.wb_browser.browser) == webdriver:
+                if self.wb_browser.browser != '':
                     self.wb_browser.browser.quit()
-                    print('quit - complate')
                     i += 1
 
             if autobasket['status'] == 104:
@@ -178,6 +184,7 @@ class MANAGE_SCRIPT():
         if len(self.fail_profiles) != 0:
             wb_browser:WB_BROWSER = WB_BROWSER(profile_name='')
             self.wb_browser = wb_browser
+            time
             self.wb_browser.get_all_proxy()
             all_proxys_id = [proxy['id'] for proxy in self.wb_browser.get_all_proxy()]
             work_proxy = None
@@ -292,15 +299,11 @@ class ADD_ITEM_IN_BASKET():
     def search(self):
         time.sleep(1)
         text_in_search = True
-        try:
-            search_input = self.wb_browser.browser.find_element(By.ID, 'searchInput')
-        except Exception as ex:
-            if str(ex) == 'STOP':
-                raise Exception('STOP')
-            return False
-        
+        search_input = self.wb_browser.browser.find_element(By.ID, 'searchInput')
+
         while text_in_search:
-            
+            print('INPUT TEXT')
+            print(self.wb_browser.profile_id)
             search_input.clear()
             if ' ' in self.search_text:
                 arr_words = self.search_text.split(' ')
@@ -312,15 +315,15 @@ class ADD_ITEM_IN_BASKET():
                     text_in_search = False
             else:
                 search_input.send_keys(self.search_text)
-
-
         search_input.send_keys(Keys.ENTER)
     
     def load_page(self):
         count_scroll_px = 100
-        time.sleep(3)
-        height_scroll = int(self.wb_browser.browser.execute_script("return document.getElementsByClassName('catalog-page__main')[0].scrollHeight"))
-
+        time.sleep(5)
+        try:
+            height_scroll = int(self.wb_browser.browser.execute_script("return document.getElementsByClassName('catalog-page__main')[0].scrollHeight"))
+        except:
+            return {'status': 104}
         while count_scroll_px < height_scroll:
             self.wb_browser.browser.execute_script(f"window.scrollTo(0, {count_scroll_px})")
             count_scroll_px += 250
@@ -343,25 +346,21 @@ class ADD_ITEM_IN_BASKET():
         time.sleep(1)
         product.click()
         time.sleep(3)
-        while True:
-            try:
-                self.wb_browser.browser.execute_script('window.scrollTo(0,0)')
-                time.sleep(1)
 
-                self.check_characteristics()
-                self.check_reviews()
-                self.check_reviews_text()
-                self.check_product_photos()
-                if self.size != None:
-                    size_list = self.wb_browser.browser.find_elements(By.CLASS_NAME, 'sizes-list')[0]
-                    sizes = size_list.find_elements(By.TAG_NAME, 'li')
-                break
-            except:
-                print(traceback.format_exc())
-                self.wb_browser.browser.refresh()
-                time.sleep(4)
-                continue
+        try:
+            self.wb_browser.browser.execute_script('window.scrollTo(0,0)')
+            time.sleep(1)
 
+            self.check_characteristics()
+            self.check_reviews()
+            self.check_reviews_text()
+            self.check_product_photos()
+            if self.size != None:
+                size_list = self.wb_browser.browser.find_elements(By.CLASS_NAME, 'sizes-list')[0]
+                sizes = size_list.find_elements(By.TAG_NAME, 'li')
+            
+        except:
+            return {'status': 104}
         if self.size != None:
             for size in sizes:
                 label = size.find_element(By.TAG_NAME, 'label')
@@ -386,7 +385,9 @@ class ADD_ITEM_IN_BASKET():
         conunt_page = 1
         while conunt_page <= self.max_pages:
             time.sleep(2)
-            self.load_page()
+            load = self.load_page()
+            if type(load) == {}:
+                return {'status': 104}
             products = self.get_all_products()
             for product in products:
                 if self.product_is_valid(product):
@@ -416,9 +417,12 @@ class ADD_ITEM_IN_BASKET():
     
     def product_in_basket(self):
         self.wb_browser.browser.get('https://www.wildberries.ru/lk/basket')
-        time.sleep(2)
+        wait: WebDriverWait = WebDriverWait(self.wb_browser.browser, 10, poll_frequency=0.1)
+        products_links_in_basket = wait.until(EC.visibility_of_all_elements_located(
+            (By.CLASS_NAME, 'good-info__title')
+        ))
         
-        products_links_in_basket = self.wb_browser.browser.find_elements(By.CLASS_NAME, 'good-info__title')
+        # products_links_in_basket = self.wb_browser.browser.find_elements(By.CLASS_NAME, 'good-info__title')
         
         for product_link in products_links_in_basket:
             link_articul = product_link.get_attribute('href').split('/')[4]
@@ -436,9 +440,12 @@ class ADD_ITEM_IN_BASKET():
     def check_reviews(self):
         try:
             self.wb_browser.browser.execute_script('window.scrollTo(0, 1350)')
-            time.sleep(1)
-            reviews_wraper = self.wb_browser.browser.find_elements(By.CLASS_NAME, 'swiper-wrapper')[2]
-            review = reviews_wraper.find_element(By.TAG_NAME, 'div')
+            wait: WebDriverWait = WebDriverWait(self.wb_browser.browser, 10, poll_frequency=0.1)
+            comment_card = wait.until(EC.visibility_of_all_elements_located(
+                (By.CLASS_NAME, 'swiper-wrapper')
+            ))
+            # reviews_wraper = self.wb_browser.browser.find_elements(By.CLASS_NAME, 'swiper-wrapper')[2]
+            review = comment_card[2].find_element(By.TAG_NAME, 'div')
             review.click()
             time.sleep(randrange(1,2))
             next_button = self.wb_browser.browser.find_element(By.CLASS_NAME, 'swiper-button-next')
@@ -450,15 +457,18 @@ class ADD_ITEM_IN_BASKET():
             time.sleep(1)
             self.wb_browser.browser.execute_script('window.scrollTo(0, 200)')
         except:
-            self.wb_browser.browser.execute_script('window.scrollTo(0, 200)')
+            return {'status': 104}
             
 
     def check_reviews_text(self):
         scroll_y = 1500
 
         self.wb_browser.browser.execute_script(f'window.scrollTo(0, {scroll_y})')
-        time.sleep(1)
-        comment_card = self.wb_browser.browser.find_element(By.CLASS_NAME, 'comment-card')
+        wait: WebDriverWait = WebDriverWait(self.wb_browser.browser, 10, poll_frequency=0.1)
+        comment_card = wait.until(EC.visibility_of_element_located(
+            (By.CLASS_NAME, 'comment-card')
+        ))
+        # comment_card = self.wb_browser.browser.find_element(By.CLASS_NAME, 'comment-card')
         self.wb_browser.browser.execute_script('arguments[0].scrollIntoView();', comment_card)
         time.sleep(0.5)
         comment_card.click()
