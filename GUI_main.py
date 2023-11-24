@@ -18,7 +18,6 @@ from manage import MANAGE_SCRIPT
 def start_autobasket(max_pages_entry='', target_profile='', headless=False):
     
     if max_pages_entry: max_pages_entry = int(max_pages_entry)
-
     manage_script = MANAGE_SCRIPT(max_pages=int(max_pages_entry), target_profile=target_profile, headless=headless)
     manage_script.start()
 
@@ -159,33 +158,31 @@ class WB_PROMOTER(tkinter.Frame):
         self.entry_setting_pages.insert(index=0,string='25')
 
     def threads_of_multiprocessing(self,number_of_accounts):
-        while len(self.infos) != 0:
-            while len(list(filter(lambda thread: thread.is_alive() == True,self.threads))) != 0:
-                if len(self.infos) == 0:
-                    self.master.btn_load2.config(text='Старт')
-                    self.master.btn_load2.config(state=tkinter.NORMAL)
-                    return
-
-            for i in range(0, number_of_accounts):
-                    if len(self.infos) == 0:
-                        self.master.btn_load2.config(text='Старт')
-                        self.master.btn_load2.config(state=tkinter.NORMAL)                        
-                        return
-                    
-                    thread = HackThread(self.loading_body(list(self.infos[0])))
-                    thread.start()
-
-                    self.threads.append(thread)
-                    self.infos.remove(self.infos[0])
-
-            while len(list(filter(lambda thread: thread.is_alive(),self.threads))) != 0:
+            while len(self.infos) != 0:
+                i = 0
+                if len(self.infos) - number_of_accounts < 0:
+                    number_of_accounts = len(self.infos)
+                while i < number_of_accounts:
+                        if len(self.infos) == 0:
+                            self.master.btn_load2.config(text='Старт')
+                            self.master.btn_load2.config(state=tkinter.NORMAL)                        
+                            return
+                        
+                        thread = HackThread(self.loading_body(list(self.infos[0])))
+                        thread.start()
+                        print('\n__START_THREAD__\n')
+                        self.threads.append(thread)
+                        self.infos.remove(self.infos[0])
+                        i += 1
+                
+                for thread in self.threads:
+                    thread.join()
+                print('\n__FINISH__\n')
                 if len(self.infos) == 0:
                     self.master.btn_load2.config(text='Старт')
                     self.master.btn_load2.config(state=tkinter.NORMAL)                    
                     return
                 
-        self.master.btn_load2.config(text='Старт')
-        self.master.btn_load2.config(state=tkinter.NORMAL)
 
     def start_loading(self):
 
@@ -196,16 +193,24 @@ class WB_PROMOTER(tkinter.Frame):
         EXCEL_REPORT().create_book()
         threads = []
         if self.entry_setting_accounts.get() != '':
-            for i in range(0, int(self.entry_setting_accounts.get())):
-                threads.append(Thread(self.loading_body(list(self.infos[0]))))
-                threads[i].start()
-                self.infos.remove(self.infos[0])
-                
-            HackThread(target=self.threads_of_multiprocessing,
-                kwargs={
-                    'number_of_accounts':int(self.entry_setting_accounts.get())}
-                ).start()
+            # i = 0
+            # while i < int(self.entry_setting_accounts.get()):
+            #     threads.append(Thread(self.loading_body(list(self.infos[0]))))
+            #     threads[i].start()
+            #     self.infos.remove(self.infos[0])
             
+            # while len(self.infos):
+                # if len(list(filter(lambda thread: thread.is_live(),self.threads))) == 0:
+                # hack_thread = ''
+                # while (hack_thread == '' or not hack_thread.is_alive()) and len(self.infos) != 0:
+                #     if hack_thread != '': print( hack_thread.is_alive())
+                    hack_thread = HackThread(target=self.threads_of_multiprocessing,
+                        kwargs={
+                            'number_of_accounts':int(self.entry_setting_accounts.get())}
+                        )
+                    hack_thread.start()
+                
+                
         else:
             self.loading_body()
 

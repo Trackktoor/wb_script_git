@@ -4,6 +4,8 @@ import requests
 from selenium.webdriver.common.by import By
 import time
 from webdriver_manager.chrome import ChromeDriverManager
+import psutil
+import win32gui
 import traceback
 
 class WB_BROWSER():
@@ -20,20 +22,43 @@ class WB_BROWSER():
 
         self.browser = ''
 
+    def activate_dolphin_window(self):
+        try:
+            hwnd = win32gui.FindWindow(None,'Dolphin{anty}')  # Должно вернуть hwnd последнего активного окна
+            win32gui.SetForegroundWindow(hwnd)
+        except:
+            pass
     # DOLPHI ENTY METHODS
     def start_doplhin_profile(self,profile_name='') -> dict:
+        self.activate_dolphin_window()
         if profile_name:
-            print(profile_name)
             profile_id = self.get_profile_id_on_profile_name(profile_name)
+            if type(profile_id) == {}:
+                return profile_id
             self.req_url_stop = f'http://localhost:3001/v1.0/browser_profiles/{profile_id}/stop'
             self.req_url_start = f'http://127.0.0.1:3001/v1.0/browser_profiles/{profile_id}/start?automation=1'
-
-            if self.headless:
-                response = requests.get(self.req_url_start + '&headless=1')
-                return response.json()
-            else:
-                response = requests.get(self.req_url_start)
-                return response.json()
+            while True:
+                if self.headless:
+                    response = requests.get(self.req_url_start + '&headless=1')
+                    if 'error' in response.json().keys():
+                        if 'already running' in response['error']:
+                            self.activate_dolphin_window()
+                            self.start_doplhin_profile()
+                            print('ERROR: DUBLICATE')
+                            time.sleep(1)
+                            continue
+        
+                    return response.json()
+                else:
+                    response = requests.get(self.req_url_start)
+                    if 'error' in response.json().keys():
+                        if 'already running' in response.json()['error']:
+                            self.activate_dolphin_window()
+                            self.req_url_stop = f'http://localhost:3001/v1.0/browser_profiles/{profile_id}/stop'
+                            print('ERROR: DUBLICATE')
+                            time.sleep(1)
+                            continue
+                    return response.json()
         else:
             if self.headless:
                 response = requests.get(self.req_url_start + '&headless=1')
@@ -43,7 +68,12 @@ class WB_BROWSER():
                 return response.json()
         
     def stop_doplhin_profile(self) -> dict:
-        response = requests.get(self.req_url_stop)
+        try:
+            self.activate_dolphin_window()
+            response = requests.get(self.req_url_stop)
+        except:
+            print(traceback.format_exc())
+            return False
         return response.json()
     
     # SELENIUM METHODS
@@ -52,16 +82,24 @@ class WB_BROWSER():
         try:
             service = Service('chromedriver-windows-x64.exe')
             response = self.start_doplhin_profile(profile_name)
+            if type(response) == {}:
+                print('NEW')
+                return False
             print(response)
             port = response['automation']['port']
         except Exception as ex:
-            response = requests.get(self.req_url_stop)
-            print('1')
+            try:
+                response = requests.get(self.req_url_stop)
+            except:
+                print('ERROR: ANTY NOT FOUND')
+                return False
+            
+            print('ERROR: BAD PROFIEL - RESTART')
             return False
 
         options = webdriver.ChromeOptions()
         options.debugger_address = f'127.0.0.1:{port}'
-
+        options.add_argument('--blink-settings=imagesEnabled=false')
         if self.quick_collection:
             """ ВНИМАНИЕ! """
             """ Данная функция может привести к утере данных """
@@ -70,30 +108,40 @@ class WB_BROWSER():
         browser = webdriver.Chrome(service=service,options=options)
         browser.set_page_load_timeout(10)
         self.browser = browser
-        self.browser.set_window_size(1920, 1080)
+        # if self.headless:
+        #     try:
+        #         self.browser.set_window_size(1920, 1080)
+        #     except:
+        #         print('ERROR: SET WINDOW SIZE ')
+        #         return False
 
         return browser
     
-    def check_proxy(self, profile:webdriver.Chrome):
-        try:
-            profile.get('https://www.wildberries.ru/')
-            time.sleep(1)
-            profile.find_elements(By.CLASS_NAME, 'product-card__link')[5]
-            return True
-        except Exception as ex:
-            if str(ex) == 'STOP':
-                raise Exception('STOP')
-            print('2')
-            return False
+    # def check_proxy(self, profile:webdriver.Chrome):
+    #     try:
+    #         profile.get('https://www.wildberries.ru/')
+    #         time.sleep(1)
+    #         profile.find_elements(By.CLASS_NAME, 'product-card__link')[5]
+    #         return True
+    #     except Exception as ex:
+    #         if str(ex) == 'STOP':
+    #             raise Exception('STOP')
+    #         print('')
+    #         return False
 
     def get_profile_id_on_profile_name(self, profile_name):
         profile_name = str(profile_name)
         headers = {
             'Authorization': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIxIiwianRpIjoiNGIyZTU5MGNhMjc1NmUzZjUzYzRjNTMyOGUzZjRkZjRiOWJmMDNiNmRjZWM1YTQ5MDUxNjJlMDc4OTNkYTkzMThhMDhmNzZjZDE3ODM0MTgiLCJpYXQiOjE2OTkwNDM3MzguMDkxMjI5LCJuYmYiOjE2OTkwNDM3MzguMDkxMjMsImV4cCI6MTczMDU3OTczOC4wODIyNCwic3ViIjoiMjg3MTQwNCIsInNjb3BlcyI6W119.SpVpJI9F9fI4ljRENdl0bL6EHm_6bI62TNGQ6Qijsc7HUGB2iec3DzsajT6wQWqk5GvOnHGA86O-rlVG-bFJYart79Ep9bPfgWZL5hj0UsazmOfXJW1cr1BWtWGubxRoKfQXFz_qMxoK0p193lpuA4E-DBxoaKFqj_TDk6wIh4dtJrmiDojGhwv6zpIJxim9wR9m1669rRvZm-6DfD8ndUx9Ml5MMW4ubAeabfR4opwa0nGyccbwKxESZbAwYBDuDkmVkbZVFxhRdFVUGXUHfAaS7MKJJN6bplUHkGKxbSZriL6xP8_mCDi-OvYhJITQntGCO0JbI3mpoC7QJWX9CQf9lLg5uYpFdUaMk4_OkMGvtyXln_qUH50peH_hNSPGymT6GQy0uD6GlRtoAQTjnBHmLz1xUlO19m7lkvYrqARXVXRZ-QCdhaStKI3Th60uvb4aSy8JhxZus090aC8QhqdAi4lnQyEG_dHFLSdLU--mYeXVKCYdpR7t9tkIwXwQ_C7AlIsUIq3EO_sxPzP6gspTCsJoe2Ig0ohilaaQx9zik7nQEdlrfyU-0aTN7khZYe0g6cxyU35C_cYnTIRFPFCxEOrBPGZksswgRWPVgZhY0YsaCnVyvsipeM8BA_lzRghZ8zyZILYaDei80XRn-YvBNG2nRv1Bw5zsRDKmlCM'
         }
-        profile = requests.request("GET", f'https://dolphin-anty-api.com/browser_profiles/?query={profile_name}', headers=headers)
-        return profile.json()['data'][0]['id']
-
+        profile = requests.request("GET", f'https://dolphin-anty-api.com/browser_profiles?query={profile_name}', headers=headers)
+        if profile.json()['data'][0]['name'] == profile_name:
+            return profile.json()['data'][0]['id']
+        else:
+            for profile_res in profile.json()['data']:
+                if profile_res['name'] == profile_name:
+                        return profile_res['id']
+                
     def change_proxy_for_target_profile(self, proxy, profile_id):
         #proxy: {
             #'type': 'http',
@@ -123,3 +171,24 @@ class WB_BROWSER():
         self.browser.quit()
 
 # print(WB_BROWSER('182637111').get_all_proxy()[0]['id'])
+
+if __name__ == '__main__':
+    wb_browser = WB_BROWSER('12').initial_selenium_browser()
+    count_scroll_px = 100
+    while True:
+        try:
+            height_scroll = int(wb_browser.execute_script("return document.getElementsByClassName('catalog-page__main')[0].scrollHeight"))
+            break
+        except:
+            print( wb_browser.execute_script("return document.readyState"))
+            time.sleep(0.5)
+            print(104)
+    while count_scroll_px < height_scroll:
+        if wb_browser.execute_script("return document.readyState") == 'complete':
+            print('complate')
+            wb_browser.execute_script(f"window.scrollTo(0, {count_scroll_px})")
+            count_scroll_px += 250
+            height_scroll = int(wb_browser.execute_script("return document.getElementsByClassName('catalog-page__main')[0].scrollHeight"))
+            time.sleep(0.4)
+        else:
+            print('wait..')

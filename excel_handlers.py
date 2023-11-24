@@ -19,8 +19,7 @@ class EXCEL_PARSER():
         values = []
 
         for row in work_book.iter_rows(min_row=start_row, max_row=end_row, values_only=True):
-            if row[2] != None:
-                values.append(row)
+            values.append(row)
         return values
 
 class EXCEL_REPORT():
@@ -73,4 +72,3 @@ if __name__ == '__main__':
     profile = 184811866
     parse = EXCEL_PARSER().get_values()
     parse = list(*filter(lambda info: info[1] == profile, parse))
-    print(parse)
