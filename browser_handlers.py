@@ -7,10 +7,12 @@ from webdriver_manager.chrome import ChromeDriverManager
 import psutil
 import win32gui
 import traceback
+import queue
 
 class WB_BROWSER():
 
     def __init__(self, profile_name='', headless=False, quick_collection=False) -> None:
+        self.profile_name = profile_name
         if profile_name: self.profile_id = self.get_profile_id_on_profile_name(profile_name=profile_name)
         else: self.profile_id = profile_name
 
@@ -21,6 +23,35 @@ class WB_BROWSER():
         self.req_url_stop = f'http://localhost:3001/v1.0/browser_profiles/{self.profile_id}/stop'
 
         self.browser = ''
+
+    def get_data_on_queue(queue:queue.Queue):
+        res = queue.get(block=True)
+        queue.put(res)
+        queue.task_done()
+        return res
+    
+    def find_work_proxy(self):
+
+        all_proxys_id = [proxy['id'] for proxy in self.get_all_proxy()]
+        for proxy_id in all_proxys_id:
+            
+            self.change_proxy_for_target_profile(proxy={'proxy[id]':proxy_id}, profile_id=self.profile_id)
+            self.initial_selenium_browser(self.profile_name)
+            try:
+                self.browser.get('https://www.wildberries.ru')
+                return proxy_id
+            except:
+                continue
+
+    def change_data_on_work_proxy(self,data:queue.Queue):
+        if not data.empty():
+                
+            data.put(self.find_work_proxy())
+            data.task_done()
+        else:
+            res = data.get(block=True)
+            data.put(res)
+            data.task_done()
 
     def activate_dolphin_window(self):
         try:
@@ -41,11 +72,12 @@ class WB_BROWSER():
                 if self.headless:
                     response = requests.get(self.req_url_start + '&headless=1')
                     if 'error' in response.json().keys():
+                        self.start_doplhin_profile()
+                        time.sleep(2)
                         if 'already running' in response['error']:
                             self.activate_dolphin_window()
                             self.start_doplhin_profile()
                             print('ERROR: DUBLICATE')
-                            time.sleep(1)
                             continue
         
                     return response.json()
@@ -54,7 +86,7 @@ class WB_BROWSER():
                     if 'error' in response.json().keys():
                         if 'already running' in response.json()['error']:
                             self.activate_dolphin_window()
-                            self.req_url_stop = f'http://localhost:3001/v1.0/browser_profiles/{profile_id}/stop'
+                            self.stop_doplhin_profile()
                             print('ERROR: DUBLICATE')
                             time.sleep(1)
                             continue
@@ -85,7 +117,6 @@ class WB_BROWSER():
             if type(response) == {}:
                 print('NEW')
                 return False
-            print(response)
             port = response['automation']['port']
         except Exception as ex:
             try:
