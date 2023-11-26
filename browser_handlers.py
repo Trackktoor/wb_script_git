@@ -2,8 +2,10 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 import requests
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait  # type: ignore
 import time
 from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.support import expected_conditions as EC
 import psutil
 import win32gui
 import traceback
@@ -24,7 +26,7 @@ class WB_BROWSER():
 
         self.browser = ''
 
-    def get_data_on_queue(queue:queue.Queue):
+    def get_data_on_queue(self,queue:queue.Queue):
         res = queue.get(block=True)
         queue.put(res)
         queue.task_done()
@@ -39,16 +41,27 @@ class WB_BROWSER():
             self.initial_selenium_browser(self.profile_name)
             try:
                 self.browser.get('https://www.wildberries.ru')
+                self.browser.refresh()
+                wait: WebDriverWait = WebDriverWait(self.browser, 5, poll_frequency=0.1)
+                height_scroll = wait.until(EC.visibility_of_element_located(
+                (By.CLASS_NAME, 'catalog-page__main')
+                ))
+                height_scroll = int(self.browser.execute_script("return document.getElementsByClassName('catalog-page__main')[0].scrollHeight"))
+                self.stop()
                 return proxy_id
             except:
                 continue
 
     def change_data_on_work_proxy(self,data:queue.Queue):
         if not data.empty():
-                
+            print('I FIND WORK PROXY')
+            
+            data.put('')
             data.put(self.find_work_proxy())
+            data.get()
             data.task_done()
         else:
+            print('I WAIT WORK PROXY')
             res = data.get(block=True)
             data.put(res)
             data.task_done()
@@ -113,6 +126,7 @@ class WB_BROWSER():
         
         try:
             service = Service('chromedriver-windows-x64.exe')
+            self.activate_dolphin_window()
             response = self.start_doplhin_profile(profile_name)
             if type(response) == {}:
                 print('NEW')

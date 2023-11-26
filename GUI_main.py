@@ -14,6 +14,7 @@ import os
 import shutil
 from browser_handlers import WB_BROWSER
 from manage import MANAGE_SCRIPT
+from excel_handlers import EXCEL_PARSER
 
 
 def start_autobasket(data_queue,max_pages_entry='', target_profile='', headless=False):
@@ -159,7 +160,15 @@ class WB_PROMOTER(tkinter.Frame):
 
     def threads_of_multiprocessing(self,number_of_accounts):
             data_queue = queue.Queue()
-            data_queue.put(WB_BROWSER(profile_name=self.infos[0][1]).find_work_proxy())
+            work_proxy = WB_BROWSER(profile_name=self.infos[0][1]).find_work_proxy()
+            print('i found work proxy')
+            accounts = EXCEL_PARSER().get_values()
+
+            for account in accounts:
+                wb_browser = WB_BROWSER(profile_name=account[1])
+                wb_browser.change_proxy_for_target_profile(profile_id=wb_browser.profile_id, proxy={'proxy[id]':work_proxy})
+                
+            data_queue.put(work_proxy)
             data_queue.task_done()
             while len(self.infos) != 0:
                 # Если рабочий прокси не указан в очереди то будем его искать

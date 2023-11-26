@@ -70,6 +70,7 @@ class MANAGE_SCRIPT():
             except TimeoutException:
                 print('ERROR: Ожидание страницы превышено, меняю прокси')
                 self.wb_browser.stop_doplhin_profile()
+                self.wb_browser.change_data_on_work_proxy(self.data_queue)
                 if self.wb_browser.browser != '':
                     self.stop()
                 return {'status': 104}
@@ -175,15 +176,16 @@ class MANAGE_SCRIPT():
                 self.wb_browser.stop_doplhin_profile()
                 if self.wb_browser.browser != '':
                     self.stop()
-                    self.wb_browser.change_data_on_work_proxy(self.data_queue)
+                    # self.wb_browser.change_data_on_work_proxy(self.data_queue)
                     print('stop - complate 105 process')
 
                 print('STATUS: 105')
                 i += 1
-            print
+
             if autobasket['status'] == 102:
                 self.wb_browser.stop_doplhin_profile()
                 if len(all_info) == 1 or self.target_profile=='':
+                    print('SystemExit')
                     raise SystemExit
             else:
                 self.wb_browser.stop_doplhin_profile()
@@ -191,9 +193,9 @@ class MANAGE_SCRIPT():
                 if self.wb_browser.browser != '':
                     self.stop()
                     print('stop - complate 100 process')
-                    if len(all_info) == 1 or self.target_profile=='':
-                        print('SystemExit')
-                        raise SystemExit
+                if len(all_info) == 1 or self.target_profile=='':
+                    print('SystemExit')
+                    raise SystemExit
                 i += 1
 
     def start(self):
@@ -224,9 +226,9 @@ class MANAGE_SCRIPT():
         if len(self.fail_profiles) != 0:
             wb_browser:WB_BROWSER = WB_BROWSER(profile_name='')
             self.wb_browser = wb_browser
-            self.wb_browser.get_all_proxy()
-            all_proxys_id = [proxy['id'] for proxy in self.wb_browser.get_all_proxy()]
-            work_proxy = self.wb_browser.get_data_on_queue()
+            # self.wb_browser.get_all_proxy()
+            # all_proxys_id = [proxy['id'] for proxy in self.wb_browser.get_all_proxy()]
+            work_proxy = self.wb_browser.get_data_on_queue(self.data_queue)
             i = 0
             status = 106
             while len(self.fail_profiles) > 0:
@@ -236,7 +238,7 @@ class MANAGE_SCRIPT():
                     j = True
                     while j:
                         try:
-                            self.wb_browser.change_proxy_for_target_profile({'proxy[id]':self.wb_browser.get_data_on_queue()}, wb_browser.get_profile_id_on_profile_name(profile[1]))
+                            self.wb_browser.change_proxy_for_target_profile({'proxy[id]':self.wb_browser.get_data_on_queue(self.data_queue)}, wb_browser.get_profile_id_on_profile_name(profile[1]))
                             autobasket_for_one_product = self.autobasket_for_one_product(profile, all_info)
                             if autobasket_for_one_product == 106:
                                 self.wb_browser.stop_doplhin_profile()
@@ -252,7 +254,6 @@ class MANAGE_SCRIPT():
                                 if self.wb_browser.browser != '':
                                     self.stop()
                                     print('stop - complate 105 two')
-                                j = False
                                 continue
 
                             if status in [100,101,102]:
@@ -263,9 +264,9 @@ class MANAGE_SCRIPT():
                                 if self.wb_browser.browser != '':
                                     self.stop()
                                     print('stop - complate 100 two')
-                                    if len(all_info) == 1 or self.target_profile=='':
-                                        print('SystemExit')
-                                        raise SystemExit
+                                if len(all_info) == 1 or self.target_profile=='':
+                                    print('SystemExit')
+                                    raise SystemExit
                                 break
                             self.wb_browser.stop_doplhin_profile() 
                             self.wb_browser.change_data_on_work_proxy(self.data_queue) 
@@ -287,6 +288,7 @@ class MANAGE_SCRIPT():
                         try:
                             autobasket_for_one_product = self.autobasket_for_one_product(profile, all_info)
                             status = autobasket_for_one_product['status']
+                            print('status_: ' + str(status))
                             if status == 105:
                                 print('STATUS: 105 ')
                                 time.sleep(0.5)
@@ -307,6 +309,7 @@ class MANAGE_SCRIPT():
                                     self.wb_browser.change_data_on_work_proxy(self.data_queue)
                                     print('stop - complate')
                         except Exception as ex:
+                            print(traceback.format_exc())
                             self.wb_browser.stop_doplhin_profile()
                             
                             if self.wb_browser.browser != '':
@@ -343,9 +346,9 @@ class MANAGE_SCRIPT():
                         if self.wb_browser.browser != '':
                             self.stop()
                             print('stop - complate')
-                            if len(all_info) == 1 or self.target_profile=='':
-                                print('SystemExit')
-                                raise SystemExit
+                        if len(all_info) == 1 or self.target_profile=='':
+                            print('SystemExit')
+                            raise SystemExit
                         continue
 
     def stop(self):
