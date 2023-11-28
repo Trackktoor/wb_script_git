@@ -525,11 +525,8 @@ class ADD_ITEM_IN_BASKET():
     def product_in_basket(self):
         try:
             self.wb_browser.browser.get('https://www.wildberries.ru/lk/basket')
-            wait: WebDriverWait = WebDriverWait(self.wb_browser.browser, 60, poll_frequency=0.3)
-            products_links_in_basket = wait.until(EC.visibility_of_all_elements_located(
-                (By.CLASS_NAME, 'good-info__title')
-            ))
-            # products_links_in_basket = self.wb_browser.browser.find_elements(By.CLASS_NAME, 'good-info__title')
+
+            products_links_in_basket = self.wb_browser.browser.find_elements(By.CLASS_NAME, 'good-info__title')
             
             for product_link in products_links_in_basket:
                 link_articul = product_link.get_attribute('href').split('/')[4]
@@ -537,7 +534,19 @@ class ADD_ITEM_IN_BASKET():
                     return True
             return False
         except:
-            return False
+            print('product_in_basket - except')
+            try:
+                wait: WebDriverWait = WebDriverWait(self.wb_browser.browser, 30, poll_frequency=0.3)
+                products_links_in_basket = wait.until(EC.visibility_of_all_elements_located(
+                    (By.CLASS_NAME, 'good-info__title')
+                ))
+                for product_link in products_links_in_basket:
+                    link_articul = product_link.get_attribute('href').split('/')[4]
+                    if link_articul == str(self.product_number):
+                        return True
+                return False
+            except:
+                return False
 
     def check_characteristics(self):
         self.wb_browser.browser.execute_script('window.scrollTo(0, 600)')
