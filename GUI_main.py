@@ -13,6 +13,7 @@ import os
 import shutil
 
 from manage import MANAGE_SCRIPT
+from browser_handlers import WB_BROWSER
 
 
 def start_autobasket(max_pages_entry='', target_profile='', headless=False):
@@ -158,6 +159,7 @@ class WB_PROMOTER(tkinter.Frame):
         self.entry_setting_pages.insert(index=0,string='25')
 
     def threads_of_multiprocessing(self,number_of_accounts):
+            WB_BROWSER().auhorization_dolphin_anty()
             while len(self.infos) != 0:
                 i = 0
                 if len(self.infos) - number_of_accounts < 0:

@@ -43,14 +43,14 @@ class MANAGE_SCRIPT():
             profile_name:str = info[1]
             wb_browser:WB_BROWSER = WB_BROWSER(profile_name=profile_name, headless=self.headless)
             self.wb_browser = wb_browser
-            self.wb_browser.initial_selenium_browser(profile_name=profile_name)
-
+            response = self.wb_browser.initial_selenium_browser(profile_name=profile_name)
+            if response == {'status': 104}:
+                return {'status': 104}
             if self.wb_browser.browser == False or self.wb_browser.browser == '':
                 print('STATUS: 105')
                 self.wb_browser.stop_doplhin_profile()
                 return {'status': 105}
                 
-            time.sleep(1.5)
             try:
                 self.wb_browser.browser.get('https://www.wildberries.ru')
 
@@ -126,6 +126,7 @@ class MANAGE_SCRIPT():
                 self.stop()
                 return {'status': 105} 
         except Exception as ex:
+            print(traceback.format_exc())
             return 106
 
     def start__process(self,all_info):
@@ -226,6 +227,8 @@ class MANAGE_SCRIPT():
                         while j:
                             try:
                                 self.wb_browser.change_proxy_for_target_profile({'proxy[id]':proxy_id}, wb_browser.get_profile_id_on_profile_name(profile[1]))
+                                self.wb_browser.auhorization_dolphin_anty()
+                                time.sleep(1)
                                 autobasket_for_one_product = self.autobasket_for_one_product(profile, all_info)
                                 if autobasket_for_one_product == 106:
                                     self.wb_browser.stop_doplhin_profile()
@@ -361,11 +364,14 @@ class ADD_ITEM_IN_BASKET():
         self.max_pages = max_pages
 
     def search(self):
-        time.sleep(1)
+        print('Search_profile: '+ str(self.profile_number))
         text_in_search = True
-        search_input = self.wb_browser.browser.find_element(By.ID, 'searchInput')
-
         stop = True
+        wait: WebDriverWait = WebDriverWait(self.wb_browser.browser, 20, poll_frequency=0.1)
+        search_input = wait.until(EC.visibility_of_element_located(
+            (By.ID, 'searchInput')
+        ))
+
         i = 0
         while text_in_search and stop:
             search_input.clear()
@@ -373,9 +379,9 @@ class ADD_ITEM_IN_BASKET():
                 arr_words = self.search_text.split(' ')
                 for word in arr_words:
                     search_input.send_keys(word + ' ')
-                    time.sleep(randrange(2,3))
+                    time.sleep(1)
                 search_input_text = self.wb_browser.browser.execute_script("return document.getElementById('searchInput').value")
-                if search_input_text == self.search_text + ' ':
+                if search_input_text.strip() == self.search_text.strip():
                     text_in_search = False
                 else:
                     i += 1
@@ -383,12 +389,20 @@ class ADD_ITEM_IN_BASKET():
                         return {'status': 104}
             else:
                 search_input.send_keys(self.search_text)
+                time.sleep(1)
+                search_input_text = self.wb_browser.browser.execute_script("return document.getElementById('searchInput').value")
+                if search_input_text.strip() == self.search_text.strip():
+                    text_in_search = False
+                    
         search_input.send_keys(Keys.ENTER)
     
     def load_page(self):
         count_scroll_px = 100
-        time.sleep(5)
         try:
+            wait: WebDriverWait = WebDriverWait(self.wb_browser.browser, 20, poll_frequency=0.1)
+            height_scroll = wait.until(EC.visibility_of_element_located(
+                (By.CLASS_NAME, 'catalog-page__main')
+            ))
             height_scroll = int(self.wb_browser.browser.execute_script("return document.getElementsByClassName('catalog-page__main')[0].scrollHeight"))
         except:
             return {'status': 104}
@@ -396,7 +410,7 @@ class ADD_ITEM_IN_BASKET():
             self.wb_browser.browser.execute_script(f"window.scrollTo(0, {count_scroll_px})")
             count_scroll_px += 250
             height_scroll = int(self.wb_browser.browser.execute_script("return document.getElementsByClassName('catalog-page__main')[0].scrollHeight"))
-            time.sleep(0.4)
+            time.sleep(0.3)
         self.wb_browser.browser.execute_script(f"window.scrollTo(0, 200)")
 
     def get_all_products(self):
@@ -429,17 +443,15 @@ class ADD_ITEM_IN_BASKET():
         return False    
     
     def add_product_in_basket(self, product):
-        time.sleep(1)
         product_clicked = True
         while product_clicked:
             product.click()
-            time.sleep(3)
+            time.sleep(1)
             if '#' in self.wb_browser.browser.current_url:
                 product.click()
             else:
                 product_clicked = False
         self.wb_browser.browser.execute_script('window.scrollTo(0,0)')
-        time.sleep(3)
 
         # self.check_characteristics()
         # self.check_reviews()
@@ -457,16 +469,39 @@ class ADD_ITEM_IN_BASKET():
                     label_classes = label.get_attribute('class')
                     if  (len(label_classes.split(' ')) == 2 or label_classes == 'j-size sizes-list__button active') and label_classes != 'j-size sizes-list__button disabled':
                         label.click()
-                        time.sleep(3)
+                        if self.wb_browser.headless == True:
+                            time.sleep(2)
+                        button = self.wb_browser.browser.find_elements(By.CLASS_NAME, 'btn-main')
+                        button[4].click()
 
-                        self.wb_browser.browser.find_elements(By.CLASS_NAME, 'btn-main')[4].click()
-                        time.sleep(2)
+                        if not 'hide' in button.get_attribute('class').split(' '):
+                            while True:
+                                button.click()
+                                time.sleep(0.5)
+                                if not 'hide' in button.get_attribute('class').split(' '):
+                                    continue
+                                else:
+                                    break
+                                
+                        time.sleep(1)
+                        print('Product added')
                         return True
                     else:
                         continue
         else:
-            self.wb_browser.browser.find_elements(By.CLASS_NAME, 'btn-main')[4].click()
-            time.sleep(4)
+            button=self.wb_browser.browser.find_elements(By.CLASS_NAME, 'btn-main')[4]
+            button.click()
+            
+            if not 'hide' in button.get_attribute('class').split(' '):
+                while True:
+                    button.click()
+                    time.sleep(0.5)
+                    if not 'hide' in button.get_attribute('class').split(' '):
+                        continue
+                    else:
+                        break
+            time.sleep(1)
+            print('Product added')
             return True
         
         return False
@@ -474,9 +509,8 @@ class ADD_ITEM_IN_BASKET():
     def find_current_product(self):
         conunt_page = 1
         while conunt_page <= self.max_pages:
-            time.sleep(2)
             load = self.load_page()
-            if type(load) == {}:
+            if load == {'status': 104}:
                 return {'status': 104}
 
             products = self.get_all_products()
@@ -514,7 +548,7 @@ class ADD_ITEM_IN_BASKET():
             wait: WebDriverWait = WebDriverWait(self.wb_browser.browser, 60, poll_frequency=0.3)
             products_links_in_basket = wait.until(EC.visibility_of_all_elements_located(
                 (By.CLASS_NAME, 'good-info__title')
-            ))
+            ))  
             # products_links_in_basket = self.wb_browser.browser.find_elements(By.CLASS_NAME, 'good-info__title')
             
             for product_link in products_links_in_basket:
@@ -608,7 +642,7 @@ class ADD_ITEM_IN_BASKET():
         for photo in photos_wrapper.find_elements(By.TAG_NAME, 'li'):
             try:
                 photo.click()
-                time.sleep(0.4)
+                time.sleep(0.2)
             except Exception as ex:
                 continue
 

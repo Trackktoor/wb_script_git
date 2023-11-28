@@ -11,12 +11,11 @@ import traceback
 class WB_BROWSER():
 
     def __init__(self, profile_name='', headless=False, quick_collection=False) -> None:
+        self.token = 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIxIiwianRpIjoiNGIyZTU5MGNhMjc1NmUzZjUzYzRjNTMyOGUzZjRkZjRiOWJmMDNiNmRjZWM1YTQ5MDUxNjJlMDc4OTNkYTkzMThhMDhmNzZjZDE3ODM0MTgiLCJpYXQiOjE2OTkwNDM3MzguMDkxMjI5LCJuYmYiOjE2OTkwNDM3MzguMDkxMjMsImV4cCI6MTczMDU3OTczOC4wODIyNCwic3ViIjoiMjg3MTQwNCIsInNjb3BlcyI6W119.SpVpJI9F9fI4ljRENdl0bL6EHm_6bI62TNGQ6Qijsc7HUGB2iec3DzsajT6wQWqk5GvOnHGA86O-rlVG-bFJYart79Ep9bPfgWZL5hj0UsazmOfXJW1cr1BWtWGubxRoKfQXFz_qMxoK0p193lpuA4E-DBxoaKFqj_TDk6wIh4dtJrmiDojGhwv6zpIJxim9wR9m1669rRvZm-6DfD8ndUx9Ml5MMW4ubAeabfR4opwa0nGyccbwKxESZbAwYBDuDkmVkbZVFxhRdFVUGXUHfAaS7MKJJN6bplUHkGKxbSZriL6xP8_mCDi-OvYhJITQntGCO0JbI3mpoC7QJWX9CQf9lLg5uYpFdUaMk4_OkMGvtyXln_qUH50peH_hNSPGymT6GQy0uD6GlRtoAQTjnBHmLz1xUlO19m7lkvYrqARXVXRZ-QCdhaStKI3Th60uvb4aSy8JhxZus090aC8QhqdAi4lnQyEG_dHFLSdLU--mYeXVKCYdpR7t9tkIwXwQ_C7AlIsUIq3EO_sxPzP6gspTCsJoe2Ig0ohilaaQx9zik7nQEdlrfyU-0aTN7khZYe0g6cxyU35C_cYnTIRFPFCxEOrBPGZksswgRWPVgZhY0YsaCnVyvsipeM8BA_lzRghZ8zyZILYaDei80XRn-YvBNG2nRv1Bw5zsRDKmlCM'
         if profile_name: self.profile_id = self.get_profile_id_on_profile_name(profile_name=profile_name)
         else: self.profile_id = profile_name
-
         self.headless = headless
         self.quick_collection = quick_collection
-
         self.req_url_start = f'http://127.0.0.1:3001/v1.0/browser_profiles/{self.profile_id}/start?automation=1'
         self.req_url_stop = f'http://localhost:3001/v1.0/browser_profiles/{self.profile_id}/stop'
 
@@ -28,6 +27,14 @@ class WB_BROWSER():
             win32gui.SetForegroundWindow(hwnd)
         except:
             pass
+    def auhorization_dolphin_anty(self):
+        try:
+            self.activate_dolphin_window()
+            response = requests.post('http://localhost:3001/v1.0/auth/login-with-token', data={'token':self.token.split(' ')[1]})
+        except:
+            print(traceback.format_exc())
+            return False
+        return response.json()
     # DOLPHI ENTY METHODS
     def start_doplhin_profile(self,profile_name='') -> dict:
         self.activate_dolphin_window()
@@ -43,9 +50,9 @@ class WB_BROWSER():
                     if 'error' in response.json().keys():
                         if 'already running' in response['error']:
                             self.activate_dolphin_window()
-                            self.start_doplhin_profile()
-                            print('ERROR: DUBLICATE')
                             time.sleep(1)
+                            self.stop_doplhin_profile()
+                            print('ERROR: DUBLICATE')
                             continue
         
                     return response.json()
@@ -54,7 +61,7 @@ class WB_BROWSER():
                     if 'error' in response.json().keys():
                         if 'already running' in response.json()['error']:
                             self.activate_dolphin_window()
-                            self.req_url_stop = f'http://localhost:3001/v1.0/browser_profiles/{profile_id}/stop'
+                            self.stop_doplhin_profile()
                             print('ERROR: DUBLICATE')
                             time.sleep(1)
                             continue
@@ -78,24 +85,31 @@ class WB_BROWSER():
     
     # SELENIUM METHODS
     def initial_selenium_browser(self, profile_name='') -> webdriver.Chrome:
-        
-        try:
-            service = Service('chromedriver-windows-x64.exe')
-            response = self.start_doplhin_profile(profile_name)
-            if type(response) == {}:
-                print('NEW')
-                return False
-            print(response)
-            port = response['automation']['port']
-        except Exception as ex:
+        no_unauthorized = True
+        port = ''
+        while no_unauthorized:
             try:
-                response = requests.get(self.req_url_stop)
-            except:
-                print('ERROR: ANTY NOT FOUND')
+                service = Service('chromedriver-windows-x64.exe')
+                response = self.start_doplhin_profile(profile_name)
+                print(response)
+                if 'error' in response.keys():
+                    if response['error'] == 'Error: Ошибка проверки соединения с прокси':
+                        return {'status': 104}
+                    if response['error'] == 'unauthorized':
+                        self.auhorization_dolphin_anty()
+                        time.sleep(1)
+                        continue
+                port = response['automation']['port']
+                break
+            except Exception as ex:
+                try:
+                    response = requests.get(self.req_url_stop)
+                except:
+                    print('ERROR: ANTY NOT FOUND')
+                    return False
+                
+                print('ERROR: BAD PROFIEL - RESTART')
                 return False
-            
-            print('ERROR: BAD PROFIEL - RESTART')
-            return False
 
         options = webdriver.ChromeOptions()
         options.debugger_address = f'127.0.0.1:{port}'
@@ -132,7 +146,7 @@ class WB_BROWSER():
     def get_profile_id_on_profile_name(self, profile_name):
         profile_name = str(profile_name)
         headers = {
-            'Authorization': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIxIiwianRpIjoiNGIyZTU5MGNhMjc1NmUzZjUzYzRjNTMyOGUzZjRkZjRiOWJmMDNiNmRjZWM1YTQ5MDUxNjJlMDc4OTNkYTkzMThhMDhmNzZjZDE3ODM0MTgiLCJpYXQiOjE2OTkwNDM3MzguMDkxMjI5LCJuYmYiOjE2OTkwNDM3MzguMDkxMjMsImV4cCI6MTczMDU3OTczOC4wODIyNCwic3ViIjoiMjg3MTQwNCIsInNjb3BlcyI6W119.SpVpJI9F9fI4ljRENdl0bL6EHm_6bI62TNGQ6Qijsc7HUGB2iec3DzsajT6wQWqk5GvOnHGA86O-rlVG-bFJYart79Ep9bPfgWZL5hj0UsazmOfXJW1cr1BWtWGubxRoKfQXFz_qMxoK0p193lpuA4E-DBxoaKFqj_TDk6wIh4dtJrmiDojGhwv6zpIJxim9wR9m1669rRvZm-6DfD8ndUx9Ml5MMW4ubAeabfR4opwa0nGyccbwKxESZbAwYBDuDkmVkbZVFxhRdFVUGXUHfAaS7MKJJN6bplUHkGKxbSZriL6xP8_mCDi-OvYhJITQntGCO0JbI3mpoC7QJWX9CQf9lLg5uYpFdUaMk4_OkMGvtyXln_qUH50peH_hNSPGymT6GQy0uD6GlRtoAQTjnBHmLz1xUlO19m7lkvYrqARXVXRZ-QCdhaStKI3Th60uvb4aSy8JhxZus090aC8QhqdAi4lnQyEG_dHFLSdLU--mYeXVKCYdpR7t9tkIwXwQ_C7AlIsUIq3EO_sxPzP6gspTCsJoe2Ig0ohilaaQx9zik7nQEdlrfyU-0aTN7khZYe0g6cxyU35C_cYnTIRFPFCxEOrBPGZksswgRWPVgZhY0YsaCnVyvsipeM8BA_lzRghZ8zyZILYaDei80XRn-YvBNG2nRv1Bw5zsRDKmlCM'
+            'Authorization': self.token
         }
         profile = requests.request("GET", f'https://dolphin-anty-api.com/browser_profiles?query={profile_name}', headers=headers)
         if profile.json()['data'][0]['name'] == profile_name:
@@ -155,12 +169,12 @@ class WB_BROWSER():
             #'id': 'id прокси',
         #}
         headers = {
-            'Authorization': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIxIiwianRpIjoiNGIyZTU5MGNhMjc1NmUzZjUzYzRjNTMyOGUzZjRkZjRiOWJmMDNiNmRjZWM1YTQ5MDUxNjJlMDc4OTNkYTkzMThhMDhmNzZjZDE3ODM0MTgiLCJpYXQiOjE2OTkwNDM3MzguMDkxMjI5LCJuYmYiOjE2OTkwNDM3MzguMDkxMjMsImV4cCI6MTczMDU3OTczOC4wODIyNCwic3ViIjoiMjg3MTQwNCIsInNjb3BlcyI6W119.SpVpJI9F9fI4ljRENdl0bL6EHm_6bI62TNGQ6Qijsc7HUGB2iec3DzsajT6wQWqk5GvOnHGA86O-rlVG-bFJYart79Ep9bPfgWZL5hj0UsazmOfXJW1cr1BWtWGubxRoKfQXFz_qMxoK0p193lpuA4E-DBxoaKFqj_TDk6wIh4dtJrmiDojGhwv6zpIJxim9wR9m1669rRvZm-6DfD8ndUx9Ml5MMW4ubAeabfR4opwa0nGyccbwKxESZbAwYBDuDkmVkbZVFxhRdFVUGXUHfAaS7MKJJN6bplUHkGKxbSZriL6xP8_mCDi-OvYhJITQntGCO0JbI3mpoC7QJWX9CQf9lLg5uYpFdUaMk4_OkMGvtyXln_qUH50peH_hNSPGymT6GQy0uD6GlRtoAQTjnBHmLz1xUlO19m7lkvYrqARXVXRZ-QCdhaStKI3Th60uvb4aSy8JhxZus090aC8QhqdAi4lnQyEG_dHFLSdLU--mYeXVKCYdpR7t9tkIwXwQ_C7AlIsUIq3EO_sxPzP6gspTCsJoe2Ig0ohilaaQx9zik7nQEdlrfyU-0aTN7khZYe0g6cxyU35C_cYnTIRFPFCxEOrBPGZksswgRWPVgZhY0YsaCnVyvsipeM8BA_lzRghZ8zyZILYaDei80XRn-YvBNG2nRv1Bw5zsRDKmlCM'
+            'Authorization': self.token
         }
         new_proxy = requests.request("PATCH", f'https://dolphin-anty-api.com/browser_profiles/{profile_id}', headers=headers,data=proxy)
     def get_all_proxy(self):
         headers = {
-            'Authorization': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIxIiwianRpIjoiNGIyZTU5MGNhMjc1NmUzZjUzYzRjNTMyOGUzZjRkZjRiOWJmMDNiNmRjZWM1YTQ5MDUxNjJlMDc4OTNkYTkzMThhMDhmNzZjZDE3ODM0MTgiLCJpYXQiOjE2OTkwNDM3MzguMDkxMjI5LCJuYmYiOjE2OTkwNDM3MzguMDkxMjMsImV4cCI6MTczMDU3OTczOC4wODIyNCwic3ViIjoiMjg3MTQwNCIsInNjb3BlcyI6W119.SpVpJI9F9fI4ljRENdl0bL6EHm_6bI62TNGQ6Qijsc7HUGB2iec3DzsajT6wQWqk5GvOnHGA86O-rlVG-bFJYart79Ep9bPfgWZL5hj0UsazmOfXJW1cr1BWtWGubxRoKfQXFz_qMxoK0p193lpuA4E-DBxoaKFqj_TDk6wIh4dtJrmiDojGhwv6zpIJxim9wR9m1669rRvZm-6DfD8ndUx9Ml5MMW4ubAeabfR4opwa0nGyccbwKxESZbAwYBDuDkmVkbZVFxhRdFVUGXUHfAaS7MKJJN6bplUHkGKxbSZriL6xP8_mCDi-OvYhJITQntGCO0JbI3mpoC7QJWX9CQf9lLg5uYpFdUaMk4_OkMGvtyXln_qUH50peH_hNSPGymT6GQy0uD6GlRtoAQTjnBHmLz1xUlO19m7lkvYrqARXVXRZ-QCdhaStKI3Th60uvb4aSy8JhxZus090aC8QhqdAi4lnQyEG_dHFLSdLU--mYeXVKCYdpR7t9tkIwXwQ_C7AlIsUIq3EO_sxPzP6gspTCsJoe2Ig0ohilaaQx9zik7nQEdlrfyU-0aTN7khZYe0g6cxyU35C_cYnTIRFPFCxEOrBPGZksswgRWPVgZhY0YsaCnVyvsipeM8BA_lzRghZ8zyZILYaDei80XRn-YvBNG2nRv1Bw5zsRDKmlCM',
+            'Authorization': self.token,
             'Content-Type': 'application/json'
         }
         all_proxys = requests.request("GET", 'https://dolphin-anty-api.com/proxy/', headers=headers)
