@@ -2,6 +2,7 @@ import openpyxl
 from openpyxl import Workbook
 import time
 
+
 class EXCEL_PARSER():
     def __init__(self, book_name='info.xlsx') -> None:
         self.book_name = book_name
@@ -9,6 +10,13 @@ class EXCEL_PARSER():
     def get_work_book(self) -> Workbook:
         work_book = openpyxl.load_workbook(self.book_name).active
         return work_book
+
+    def trip_el_excel(self,el):
+        if el == None:
+            return el
+        if type(el) == int:
+            return el
+        return el.strip()
 
     def get_values(self) -> dict:
         work_book = self.get_work_book()
@@ -19,7 +27,7 @@ class EXCEL_PARSER():
         values = []
 
         for row in work_book.iter_rows(min_row=start_row, max_row=end_row, values_only=True):
-            values.append(row)
+            values.append(tuple(map(self.trip_el_excel, row)))
         return values
 
 class EXCEL_REPORT():

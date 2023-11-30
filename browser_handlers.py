@@ -1,10 +1,7 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 import requests
-from selenium.webdriver.common.by import By
 import time
-from webdriver_manager.chrome import ChromeDriverManager
-import psutil
 import win32gui
 import traceback
 
@@ -14,6 +11,7 @@ class WB_BROWSER():
         self.token = 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIxIiwianRpIjoiNGIyZTU5MGNhMjc1NmUzZjUzYzRjNTMyOGUzZjRkZjRiOWJmMDNiNmRjZWM1YTQ5MDUxNjJlMDc4OTNkYTkzMThhMDhmNzZjZDE3ODM0MTgiLCJpYXQiOjE2OTkwNDM3MzguMDkxMjI5LCJuYmYiOjE2OTkwNDM3MzguMDkxMjMsImV4cCI6MTczMDU3OTczOC4wODIyNCwic3ViIjoiMjg3MTQwNCIsInNjb3BlcyI6W119.SpVpJI9F9fI4ljRENdl0bL6EHm_6bI62TNGQ6Qijsc7HUGB2iec3DzsajT6wQWqk5GvOnHGA86O-rlVG-bFJYart79Ep9bPfgWZL5hj0UsazmOfXJW1cr1BWtWGubxRoKfQXFz_qMxoK0p193lpuA4E-DBxoaKFqj_TDk6wIh4dtJrmiDojGhwv6zpIJxim9wR9m1669rRvZm-6DfD8ndUx9Ml5MMW4ubAeabfR4opwa0nGyccbwKxESZbAwYBDuDkmVkbZVFxhRdFVUGXUHfAaS7MKJJN6bplUHkGKxbSZriL6xP8_mCDi-OvYhJITQntGCO0JbI3mpoC7QJWX9CQf9lLg5uYpFdUaMk4_OkMGvtyXln_qUH50peH_hNSPGymT6GQy0uD6GlRtoAQTjnBHmLz1xUlO19m7lkvYrqARXVXRZ-QCdhaStKI3Th60uvb4aSy8JhxZus090aC8QhqdAi4lnQyEG_dHFLSdLU--mYeXVKCYdpR7t9tkIwXwQ_C7AlIsUIq3EO_sxPzP6gspTCsJoe2Ig0ohilaaQx9zik7nQEdlrfyU-0aTN7khZYe0g6cxyU35C_cYnTIRFPFCxEOrBPGZksswgRWPVgZhY0YsaCnVyvsipeM8BA_lzRghZ8zyZILYaDei80XRn-YvBNG2nRv1Bw5zsRDKmlCM'
         if profile_name: self.profile_id = self.get_profile_id_on_profile_name(profile_name=profile_name)
         else: self.profile_id = profile_name
+        self.profile_name = profile_name
         self.headless = headless
         self.quick_collection = quick_collection
         self.req_url_start = f'http://127.0.0.1:3001/v1.0/browser_profiles/{self.profile_id}/start?automation=1'
@@ -48,12 +46,13 @@ class WB_BROWSER():
                 if self.headless:
                     response = requests.get(self.req_url_start + '&headless=1')
                     if 'error' in response.json().keys():
-                        if 'already running' in response['error']:
+                        if 'already running' in response.json()['error']:
                             self.activate_dolphin_window()
                             time.sleep(1)
                             self.stop_doplhin_profile()
                             print('ERROR: DUBLICATE')
                             continue
+                    print(response.json())
         
                     return response.json()
                 else:
@@ -65,6 +64,7 @@ class WB_BROWSER():
                             print('ERROR: DUBLICATE')
                             time.sleep(1)
                             continue
+
                     return response.json()
         else:
             if self.headless:
@@ -78,11 +78,31 @@ class WB_BROWSER():
         try:
             self.activate_dolphin_window()
             response = requests.get(self.req_url_stop)
+            len_line = len('PROFILE ' + str(self.profile_name) +  ' STOP: ' + str(response.json()))
+            print(
+                f"\n{ '-' * len_line }\n" +
+                'PROFILE ' + str(self.profile_name) +  ' STOP: ' + str(response.json()) +
+                f"\n{ '-' * len_line }\n"
+                )
         except:
             print(traceback.format_exc())
             return False
         return response.json()
     
+    def close_tabs_browser(self, browser:webdriver.Chrome):
+        windows = browser.window_handles[1:]
+        # Переключиться на каждую вкладку и закрыть ее
+        for window in windows:
+            try:
+                browser.switch_to.window(window)
+                browser.close()
+            except:
+                continue
+
+        # Вернуться к исходной вкладке
+
+        # browser.switch_to.window(browser.window_handles[0])
+
     # SELENIUM METHODS
     def initial_selenium_browser(self, profile_name='') -> webdriver.Chrome:
         no_unauthorized = True
@@ -91,13 +111,18 @@ class WB_BROWSER():
             try:
                 service = Service('chromedriver-windows-x64.exe')
                 response = self.start_doplhin_profile(profile_name)
-                print(response)
+                len_line = len('PROFILE ' + str(self.profile_name) +  ' START: ' + str(response))
+                print(
+                    f"\n{ '-' * len_line }\n" +
+                    'PROFILE ' + str(self.profile_name) +  ' START: ' + str(response) +
+                    f"\n{ '-' * len_line }\n"
+                )
                 if 'error' in response.keys():
                     if response['error'] == 'Error: Ошибка проверки соединения с прокси':
                         return {'status': 104}
                     if response['error'] == 'unauthorized':
                         self.auhorization_dolphin_anty()
-                        time.sleep(1)
+                        time.sleep(2)
                         continue
                 port = response['automation']['port']
                 break
@@ -107,12 +132,14 @@ class WB_BROWSER():
                 except:
                     print('ERROR: ANTY NOT FOUND')
                     return False
-                
+                print(traceback.format_exc())
                 print('ERROR: BAD PROFIEL - RESTART')
                 return False
 
         options = webdriver.ChromeOptions()
         options.debugger_address = f'127.0.0.1:{port}'
+        if self.headless:
+            options.add_argument("start-maximized")
         options.add_argument('--blink-settings=imagesEnabled=false')
         if self.quick_collection:
             """ ВНИМАНИЕ! """
@@ -121,12 +148,19 @@ class WB_BROWSER():
 
         browser = webdriver.Chrome(service=service,options=options)
         browser.set_page_load_timeout(10)
+        # browser.implicitly_wait(10)
+        # size = browser.get_window_size()
+        # print("Ширина окна:", size['width'])
+        # print("Высота окна:", size['height'])
         self.browser = browser
+        if len(browser.window_handles) > 1:
+            self.close_tabs_browser(browser=browser)
         # if self.headless:
         #     try:
-        #         self.browser.set_window_size(1920, 1080)
+        #         self.browser.execute_script('window.resizeTo(1920, 1080);')
         #     except:
         #         print('ERROR: SET WINDOW SIZE ')
+
         #         return False
 
         return browser
@@ -144,12 +178,11 @@ class WB_BROWSER():
     #         return False
 
     def get_profile_id_on_profile_name(self, profile_name):
-        profile_name = str(profile_name)
         headers = {
             'Authorization': self.token
         }
-        profile = requests.request("GET", f'https://dolphin-anty-api.com/browser_profiles?query={profile_name}', headers=headers)
-        if profile.json()['data'][0]['name'] == profile_name:
+        profile = requests.request("GET", 'https://dolphin-anty-api.com/browser_profiles?query=' + str(profile_name), headers=headers)
+        if profile.json()['data'][0]['name'] == str(profile_name):
             return profile.json()['data'][0]['id']
         else:
             for profile_res in profile.json()['data']:

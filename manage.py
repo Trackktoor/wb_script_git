@@ -47,7 +47,7 @@ class MANAGE_SCRIPT():
             if response == {'status': 104}:
                 return {'status': 104}
             if self.wb_browser.browser == False or self.wb_browser.browser == '':
-                print('STATUS: 105')
+                print('STATUS: 105 - autobasket_for_one_product')
                 self.wb_browser.stop_doplhin_profile()
                 return {'status': 105}
                 
@@ -60,13 +60,11 @@ class MANAGE_SCRIPT():
                     return {'status': 104}
                 if search == False:
                     self.stop()
-                    self.wb_browser.stop_doplhin_profile()
                     return {'status': 104}
 
                 product = add_item_in_basket.find_current_product()
             except TimeoutException:
                 print('ERROR: Ожидание страницы превышено, меняю прокси')
-                self.wb_browser.stop_doplhin_profile()
                 self.stop()
                 return {'status': 104}
             except Exception as ex:
@@ -74,7 +72,6 @@ class MANAGE_SCRIPT():
                         print('ERROR: Chrome not reachable')
                     else:
                         print(traceback.format_exc())
-                    self.wb_browser.stop_doplhin_profile()
                     self.stop()
                     return {'status': 104}
                 
@@ -84,8 +81,14 @@ class MANAGE_SCRIPT():
                 result = [item for item in info if item != None]
                 result.append('Продукт не найден на страницах')
                 self.report.add_product(result)
-                self.wb_browser.stop_doplhin_profile()
-                print('stop_doplhin_profile')   
+                print('report - append')
+                if self.wb_browser.browser != '':
+                    self.stop()
+                else:
+                    self.wb_browser.stop_doplhin_profile()
+                if len(all_info) == 1 or self.target_profile=='':
+                    print('SystemExit')
+                    raise SystemExit
                 return {'status':102}
             
             if product == {'status': 104}:
@@ -93,16 +96,18 @@ class MANAGE_SCRIPT():
             
             product_added = add_item_in_basket.add_product_in_basket(product)
 
-            if product_added == {'status': 104}:
-                return {'status': 104}
+            if isinstance(product_added, dict): return product_added
 
-            if not product_added:
-                print('not product_added')
+            if product_added == False:
+                print('Error: Нет нужного размера')
                 result = [item for item in info if item != None]
                 result.append('Ошибка: Нет нужного размера')
                 self.report.add_product(result)
-                self.wb_browser.stop_doplhin_profile()
+                print('report - complate')
                 self.stop()
+                if len(all_info) == 1 or self.target_profile=='':
+                    print('SystemExit')
+                    raise SystemExit
                 return {'status':101}
             
             if add_item_in_basket.product_in_basket():
@@ -111,18 +116,21 @@ class MANAGE_SCRIPT():
                 
                 result.append('OK')
                 self.report.add_product(result)
-                print('report - complate')
-                self.wb_browser.stop_doplhin_profile()
+
+                print(f'report - complate')
+
                 if self.wb_browser.browser != '':
                     self.stop()
-                    print('stop - complate finish')
-                    if len(all_info) == 1 or self.target_profile=='':
-                        print('SystemExit')
-                        raise SystemExit
+                else:
+                    self.wb_browser.stop_doplhin_profile()
+
+                if len(all_info) == 1 or self.target_profile=='':
+                    print('SystemExit')
+                    raise SystemExit
          
                 return {'status': 100}
             else:
-                self.wb_browser.stop_doplhin_profile()
+                print('error: 106 - product_in_basket')
                 self.stop()
                 return {'status': 105} 
         except Exception as ex:
@@ -138,52 +146,56 @@ class MANAGE_SCRIPT():
                 self.fail_profiles.append(info)
                 i += 1
                 print('STATUS: 106')
-                self.wb_browser.stop_doplhin_profile()
                 if self.wb_browser.browser != '':
                     self.stop()
+                else:
+                    self.wb_browser.stop_doplhin_profile()
                 continue
             if autobasket['status'] == 103:
-                self.wb_browser.stop_doplhin_profile()
+                
                 if self.wb_browser.browser != '':
                     self.stop()
-                    print('stop - complate 103 process')
                     i += 1
                     continue
-
+                else:
+                    self.wb_browser.stop_doplhin_profile()
             if autobasket['status'] == 104:
                 self.fail_profiles.append(info)
-                self.wb_browser.stop_doplhin_profile()
+                
                 if self.wb_browser.browser != '':
                     self.stop()
-                    print('stop - complate 104 process')
-
+                else:
+                    self.wb_browser.stop_doplhin_profile()
                 print('STATUS: 104')
                 i += 1
                 continue
 
             if autobasket['status'] == 105:
                 self.fail_profiles.append(info)
-                self.wb_browser.stop_doplhin_profile()
+                
                 if self.wb_browser.browser != '':
                     self.stop()
-                    print('stop - complate 105 process')
-
-                print('STATUS: 105')
+                else:
+                    self.wb_browser.stop_doplhin_profile()
+                print('STATUS: 105 - start__process')
                 i += 1
-            print
+
             if autobasket['status'] == 102:
                 self.wb_browser.stop_doplhin_profile()
                 if len(all_info) == 1 or self.target_profile=='':
                     raise SystemExit
             else:
-                self.wb_browser.stop_doplhin_profile()
+                
                 
                 if self.wb_browser.browser != '':
                     self.stop()
-                    print('stop - complate 100 process')
-                    if len(all_info) == 1 or self.target_profile=='':
-                        print('SystemExit')
-                        raise SystemExit
+                    
+                else:
+                    self.wb_browser.stop_doplhin_profile()
+
+                if len(all_info) == 1 or self.target_profile=='':
+                    print('SystemExit')
+                    raise SystemExit
                 i += 1
 
     def start(self):
@@ -231,39 +243,43 @@ class MANAGE_SCRIPT():
                                 time.sleep(1)
                                 autobasket_for_one_product = self.autobasket_for_one_product(profile, all_info)
                                 if autobasket_for_one_product == 106:
-                                    self.wb_browser.stop_doplhin_profile()
+                                    
                                     if self.wb_browser.browser != '':
                                         self.stop()
-                                        print('stop - complate 106 two')
+                                    else:
+                                        self.wb_browser.stop_doplhin_profile()
                                     print('STATUS: 106')
                                     continue
                                 status = autobasket_for_one_product['status']
                                 if status == 105:
-                                    self.wb_browser.stop_doplhin_profile()
+                                    
                                     if self.wb_browser.browser != '':
                                         self.stop()
-                                        print('stop - complate 105 two')
+                                    else:
+                                        self.wb_browser.stop_doplhin_profile()
                                     j = False
                                     continue
-
+                                    
                                 if status in [100,101,102]:
                                     work_proxy = proxy_id
                                     j = False
                                     i += 1
                                     self.fail_profiles.remove(profile)
-                                    self.wb_browser.stop_doplhin_profile()
+                                    
                                     if self.wb_browser.browser != '':
                                         self.stop()
-                                        print('stop - complate 100 two')
-                                        if len(all_info) == 1 or self.target_profile=='':
-                                            print('SystemExit')
-                                            raise SystemExit
+                                    else:
+                                        self.wb_browser.stop_doplhin_profile()
+                                    if len(all_info) == 1 or self.target_profile=='':
+                                        print('SystemExit')
+                                        raise SystemExit
+                                    
                                     break
-                                self.wb_browser.stop_doplhin_profile()  
+                                  
                                 if self.wb_browser.browser != '':
                                     self.stop()
-                                    print('stop - complate 106 last')
-
+                                else:
+                                    self.wb_browser.stop_doplhin_profile()
                                 j = False
                                 continue
                             except SystemExit:
@@ -275,10 +291,11 @@ class MANAGE_SCRIPT():
                             self.wb_browser.stop_doplhin_profile()
                             if self.wb_browser.browser != '':
                                 self.stop()
-                                print('stop - complate 100 two')
-                                if len(all_info) == 1 or self.target_profile=='':
-                                    print('SystemExit')
-                                    raise SystemExit
+                            else:
+                                self.wb_browser.stop_doplhin_profile()
+                            if len(all_info) == 1 or self.target_profile=='':
+                                print('SystemExit')
+                                raise SystemExit
                             break
                 else:
                     self.wb_browser.change_proxy_for_target_profile({'proxy[id]':work_proxy}, profile[1])
@@ -289,63 +306,78 @@ class MANAGE_SCRIPT():
                             autobasket_for_one_product = self.autobasket_for_one_product(profile, all_info)
                             status = autobasket_for_one_product['status']
                             if status == 105:
-                                print('STATUS: 105 ')
+                                print('STATUS: 105 - else')
                                 time.sleep(0.5)
                                 print('Профиль недостпуен, пытаюсь подключиться...')
-                                self.wb_browser.stop_doplhin_profile()
+                                
                                 if self.wb_browser.browser != '':
                                     self.stop()
-                                    print('stop - complate 105 three')
+                                else:
+                                    self.wb_browser.stop_doplhin_profile()
                                 continue
 
                             if status == 104:
                                 print('PT: 104')
                                 work_proxy = None
                                 j = False
-                                self.wb_browser.stop_doplhin_profile()
+                                
                                 if self.wb_browser.browser != '':
                                     self.stop()
                                     print('stop - complate')
+                                else:
+                                    self.wb_browser.stop_doplhin_profile()
                         except Exception as ex:
-                            self.wb_browser.stop_doplhin_profile()
+                            
+                            print(traceback.format_exc())
                             
                             if self.wb_browser.browser != '':
                                 self.stop()
-                                print('stop - complate')
+                            else:
+                                self.wb_browser.stop_doplhin_profile()
                     
                     if status == 102:
                         print('STATUS: 102')
                         i += 1
                         self.fail_profiles.remove(profile)
-                        self.wb_browser.stop_doplhin_profile()
+                        
                         if self.wb_browser.browser != '':
                             self.stop()
-                            print('stop - complate')
+                        else:
+                            self.wb_browser.stop_doplhin_profile()
+                        if len(all_info) == 1 or self.target_profile=='':
+                            print('SystemExit')
+                            raise SystemExit
                         continue
                     
                     if status == 103:
                         print('STATUS: 103')
-                        result = [item for item in profile if item != None]
-                        result.append(f'Ошибка: не добавлен в корзину')
-                        self.report.add_product(result)
+                        # result = [item for item in profile if item != None]
+                        # result.append(f'Ошибка: не добавлен в корзину')
+                        # self.report.add_product(result)
+                        
                         i += 1
                         j = False
                         self.fail_profiles.remove(profile)
-                        self.wb_browser.stop_doplhin_profile()
+                        
                         if self.wb_browser.browser != '':
                             self.stop()
-                            print('stop - complate')
+                        else:
+                            self.wb_browser.stop_doplhin_profile()
+                        if len(all_info) == 1 or self.target_profile=='':
+                            print('SystemExit')
+                            raise SystemExit
                     else:
                         print('PT: 101,103')
                         self.fail_profiles.remove(profile)
                         i += 1
-                        self.wb_browser.stop_doplhin_profile()
+                        
                         if self.wb_browser.browser != '':
                             self.stop()
-                            print('stop - complate')
-                            if len(all_info) == 1 or self.target_profile=='':
-                                print('SystemExit')
-                                raise SystemExit
+                        else:
+                            self.wb_browser.stop_doplhin_profile()
+                        if len(all_info) == 1 or self.target_profile=='':
+                            print('SystemExit')
+                            raise SystemExit
                         continue
 
     def stop(self):
@@ -364,7 +396,6 @@ class ADD_ITEM_IN_BASKET():
         self.max_pages = max_pages
 
     def search(self):
-        print('Search_profile: '+ str(self.profile_number))
         text_in_search = True
         stop = True
         wait: WebDriverWait = WebDriverWait(self.wb_browser.browser, 20, poll_frequency=0.1)
@@ -410,7 +441,7 @@ class ADD_ITEM_IN_BASKET():
             self.wb_browser.browser.execute_script(f"window.scrollTo(0, {count_scroll_px})")
             count_scroll_px += 250
             height_scroll = int(self.wb_browser.browser.execute_script("return document.getElementsByClassName('catalog-page__main')[0].scrollHeight"))
-            time.sleep(0.3)
+            time.sleep(0.5)
         self.wb_browser.browser.execute_script(f"window.scrollTo(0, 200)")
 
     def get_all_products(self):
@@ -461,20 +492,21 @@ class ADD_ITEM_IN_BASKET():
         if self.size != None:
             size_list = self.wb_browser.browser.find_elements(By.CLASS_NAME, 'sizes-list')[0]
             sizes = size_list.find_elements(By.TAG_NAME, 'li')
-
-        if self.size != None:
             for size in sizes:
                 label = size.find_element(By.TAG_NAME, 'label')
                 if label.find_element(By.CLASS_NAME, 'sizes-list__size').text == str(self.size):
                     label_classes = label.get_attribute('class')
                     if  (len(label_classes.split(' ')) == 2 or label_classes == 'j-size sizes-list__button active') and label_classes != 'j-size sizes-list__button disabled':
                         label.click()
-                        if self.wb_browser.headless == True:
-                            time.sleep(2)
-                        button = self.wb_browser.browser.find_elements(By.CLASS_NAME, 'btn-main')
-                        button[4].click()
+                        try:
+                            wait = WebDriverWait(self.wb_browser.browser, 20)
+                            button_not_clicable = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, "button.btn-main")))[2]
+                            button = wait.until(EC.element_to_be_clickable(button_not_clicable))
 
-                        if not 'hide' in button.get_attribute('class').split(' '):
+                            button.click()
+                        except:
+                            return {'status': 106}
+                        if not ('hide' in button.get_attribute('class').split(' ')):
                             while True:
                                 button.click()
                                 time.sleep(0.5)
@@ -484,24 +516,25 @@ class ADD_ITEM_IN_BASKET():
                                     break
                                 
                         time.sleep(1)
-                        print('Product added')
                         return True
                     else:
                         continue
         else:
-            button=self.wb_browser.browser.find_elements(By.CLASS_NAME, 'btn-main')[4]
+            wait = WebDriverWait(self.wb_browser.browser, 20)
+            button_not_clicable = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, "button.btn-main")))[2]
+            button = wait.until(EC.element_to_be_clickable(button_not_clicable))
+
             button.click()
             
-            if not 'hide' in button.get_attribute('class').split(' '):
+            if not ('hide' in button.get_attribute('class').split(' ')):
                 while True:
                     button.click()
                     time.sleep(0.5)
-                    if not 'hide' in button.get_attribute('class').split(' '):
+                    if not ('hide' in button.get_attribute('class').split(' ')):
                         continue
                     else:
                         break
             time.sleep(1)
-            print('Product added')
             return True
         
         return False
@@ -545,8 +578,8 @@ class ADD_ITEM_IN_BASKET():
     def product_in_basket(self):
         try:
             self.wb_browser.browser.get('https://www.wildberries.ru/lk/basket')
-            wait: WebDriverWait = WebDriverWait(self.wb_browser.browser, 60, poll_frequency=0.3)
-            products_links_in_basket = wait.until(EC.visibility_of_all_elements_located(
+            wait: WebDriverWait = WebDriverWait(self.wb_browser.browser, 20, poll_frequency=0.3)
+            products_links_in_basket = wait.until(EC.presence_of_all_elements_located(
                 (By.CLASS_NAME, 'good-info__title')
             ))  
             # products_links_in_basket = self.wb_browser.browser.find_elements(By.CLASS_NAME, 'good-info__title')
@@ -555,9 +588,26 @@ class ADD_ITEM_IN_BASKET():
                 link_articul = product_link.get_attribute('href').split('/')[4]
                 if link_articul == str(self.product_number):
                     return True
+            print('False - 1')
             return False
         except:
-            return False
+            print('product_in_basket - except')
+            try:
+                wait: WebDriverWait = WebDriverWait(self.wb_browser.browser, 30, poll_frequency=0.3)
+                product_link_in_basket = wait.until(EC.presence_of_all_elements_located(
+                    (By.CLASS_NAME, 'good-info__title')
+                ))
+                for product_link in product_link_in_basket:
+                    link_articul = product_link.get_attribute('href').split('/')[4]
+                    if link_articul == str(self.product_number):
+                        return True
+                print('False - 2')
+                time.sleep(20)
+                return False
+            except:
+                print(traceback.format_exc())
+                print('False - 3')
+                return False
 
     def check_characteristics(self):
         self.wb_browser.browser.execute_script('window.scrollTo(0, 600)')
