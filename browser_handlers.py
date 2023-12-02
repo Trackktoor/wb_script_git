@@ -107,6 +107,7 @@ class WB_BROWSER():
     def initial_selenium_browser(self, profile_name='') -> webdriver.Chrome:
         no_unauthorized = True
         port = ''
+        print(f'profile name in string: "{self.profile_name}"')
         while no_unauthorized:
             try:
                 service = Service('chromedriver-windows-x64.exe')
