@@ -11,7 +11,7 @@ import tkinter.messagebox as mb
 import sys
 import os
 import shutil
-
+import threading
 from manage import MANAGE_SCRIPT
 from browser_handlers import WB_BROWSER
 
@@ -159,6 +159,7 @@ class WB_PROMOTER(tkinter.Frame):
         self.entry_setting_pages.insert(index=0,string='25')
 
     def threads_of_multiprocessing(self,number_of_accounts):
+            print(f'Active th: {threading.active_count()}')
             """ Запуск потоков """
             #  очистка self.infos от пустых элементов
             res = []
@@ -167,10 +168,33 @@ class WB_PROMOTER(tkinter.Frame):
                     res.append(i)
             self.infos = res
 
+            # Создаем словарь с уникальными ключами и значниями в виде списка
             unic_name = set(map(lambda account: account[1], self.infos))
             dict_on_unic_name = {name:[] for name in unic_name}
+            
+            # Заполняем наш словарь по его ключам аккаунтами
+            for account in self.infos:
+                dict_on_unic_name[account[1]].append(account)
             print(dict_on_unic_name)
 
+            # Переменная для активных потоков
+            active_threads = {}
+            # Цикл будет работать пока хотя бы в одном из значение ключей словаря будет элемент в списке
+            while max(list(map(lambda arr_in_dict: len(dict_on_unic_name[arr_in_dict]), dict_on_unic_name))) != 0:
+                """ Проверка на живые активные поток и их чистка """
+                keys_to_remove = list(active_threads.keys())
+                for th in keys_to_remove:
+                    if not active_threads[th].is_alive():
+                        del active_threads[th]
+                """ Запуск потока если для него есть место и нет потока с таким же профилем """
+                for name in unic_name:
+                    if threading.active_count()-2 < number_of_accounts:
+                        if len(dict_on_unic_name[name]) > 0 and name not in active_threads.keys():
+                            el = dict_on_unic_name[name].pop(0)
+                            thred = threading.Thread(target=self.loading_body, args=[list(el)])
+                            thred.start()
+                            active_threads[name]=thred
+                            print(active_threads.keys())
             # WB_BROWSER().auhorization_dolphin_anty()
             # while len(self.infos) != 0:
             #     i = 0
