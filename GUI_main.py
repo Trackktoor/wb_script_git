@@ -144,7 +144,7 @@ class WB_PROMOTER(tkinter.Frame):
         self.entry_setting_accounts = ttk.Entry(width=10)
         self.entry_setting_accounts.place(x=x+140, y=y)
 
-        self.label_setting_browser_hidden= ttk.Label(text='Показать браузер:')
+        self.label_setting_browser_hidden= ttk.Label(text='Скрыть браузер:')
         self.label_setting_browser_hidden.place(x=x, y=y+50)
 
         self.entry_setting_browser_hidden = CheckbuttonVar(width=10)
@@ -159,32 +159,45 @@ class WB_PROMOTER(tkinter.Frame):
         self.entry_setting_pages.insert(index=0,string='25')
 
     def threads_of_multiprocessing(self,number_of_accounts):
-            WB_BROWSER().auhorization_dolphin_anty()
-            while len(self.infos) != 0:
-                i = 0
-                if len(self.infos) - number_of_accounts < 0:
-                    number_of_accounts = len(self.infos)
-                while i < number_of_accounts:
-                        if len(self.infos) == 0:
-                            self.master.btn_load2.config(text='Старт')
-                            self.master.btn_load2.config(state=tkinter.NORMAL)                        
-                            return
+            """ Запуск потоков """
+            #  очистка self.infos от пустых элементов
+            res = []
+            for i in self.infos:
+                if len(list(filter(lambda item: not(item == None),i))) > 0:
+                    res.append(i)
+            self.infos = res
+
+            unic_name = set(map(lambda account: account[1], self.infos))
+            dict_on_unic_name = {name:[] for name in unic_name}
+            print(dict_on_unic_name)
+
+            # WB_BROWSER().auhorization_dolphin_anty()
+            # while len(self.infos) != 0:
+            #     i = 0
+            #     if len(self.infos) - number_of_accounts < 0:
+            #         number_of_accounts = len(self.infos)
+            #     while i < number_of_accounts:
+            #             if len(self.infos) == 0:
+            #                 self.master.btn_load2.config(text='Старт')
+            #                 self.master.btn_load2.config(state=tkinter.NORMAL)                        
+            #                 return
                         
-                        thread = HackThread(self.loading_body(list(self.infos[0])))
-                        thread.start()
-                        print('\n__START_THREAD__\n')
-                        self.threads.append(thread)
-                        self.infos.remove(self.infos[0])
-                        i += 1
+            #             thread = HackThread(self.loading_body(list(self.infos[0])))
+            #             thread.start()
+            #             print('\n__START_THREAD__\n')
+            #             self.threads.append(thread)
+            #             self.infos.remove(self.infos[0])
+            #             i += 1
                 
-                for thread in self.threads:
-                    thread.join()
-                print('\n__FINISH__\n')
-                if len(self.infos) == 0:
-                    self.master.btn_load2.config(text='Старт')
-                    self.master.btn_load2.config(state=tkinter.NORMAL)                    
-                    return
-                
+            #     for thread in self.threads:
+            #         thread.join()
+            #     print('\n__FINISH__\n')
+            #     if len(self.infos) == 0:
+            #         self.master.btn_load2.config(text='Старт')
+            #         self.master.btn_load2.config(state=tkinter.NORMAL)                    
+            #         return
+            self.master.btn_load2.config(text='Старт')
+            self.master.btn_load2.config(state=tkinter.NORMAL)    
 
     def start_loading(self):
 
@@ -193,25 +206,12 @@ class WB_PROMOTER(tkinter.Frame):
 
         self.infos = EXCEL_PARSER().get_values()
         EXCEL_REPORT().create_book()
-        threads = []
         if self.entry_setting_accounts.get() != '':
-            # i = 0
-            # while i < int(self.entry_setting_accounts.get()):
-            #     threads.append(Thread(self.loading_body(list(self.infos[0]))))
-            #     threads[i].start()
-            #     self.infos.remove(self.infos[0])
-            
-            # while len(self.infos):
-                # if len(list(filter(lambda thread: thread.is_live(),self.threads))) == 0:
-                # hack_thread = ''
-                # while (hack_thread == '' or not hack_thread.is_alive()) and len(self.infos) != 0:
-                #     if hack_thread != '': print( hack_thread.is_alive())
                     hack_thread = HackThread(target=self.threads_of_multiprocessing,
                         kwargs={
                             'number_of_accounts':int(self.entry_setting_accounts.get())}
                         )
                     hack_thread.start()
-                
                 
         else:
             self.loading_body()

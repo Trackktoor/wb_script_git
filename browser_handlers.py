@@ -5,10 +5,12 @@ import time
 import win32gui
 import traceback
 
+
 class WB_BROWSER():
 
-    def __init__(self, profile_name='', headless=False, quick_collection=False) -> None:
+    def __init__(self, profile_name='', headless=False, quick_collection=False) -> None:    
         self.token = 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIxIiwianRpIjoiNGIyZTU5MGNhMjc1NmUzZjUzYzRjNTMyOGUzZjRkZjRiOWJmMDNiNmRjZWM1YTQ5MDUxNjJlMDc4OTNkYTkzMThhMDhmNzZjZDE3ODM0MTgiLCJpYXQiOjE2OTkwNDM3MzguMDkxMjI5LCJuYmYiOjE2OTkwNDM3MzguMDkxMjMsImV4cCI6MTczMDU3OTczOC4wODIyNCwic3ViIjoiMjg3MTQwNCIsInNjb3BlcyI6W119.SpVpJI9F9fI4ljRENdl0bL6EHm_6bI62TNGQ6Qijsc7HUGB2iec3DzsajT6wQWqk5GvOnHGA86O-rlVG-bFJYart79Ep9bPfgWZL5hj0UsazmOfXJW1cr1BWtWGubxRoKfQXFz_qMxoK0p193lpuA4E-DBxoaKFqj_TDk6wIh4dtJrmiDojGhwv6zpIJxim9wR9m1669rRvZm-6DfD8ndUx9Ml5MMW4ubAeabfR4opwa0nGyccbwKxESZbAwYBDuDkmVkbZVFxhRdFVUGXUHfAaS7MKJJN6bplUHkGKxbSZriL6xP8_mCDi-OvYhJITQntGCO0JbI3mpoC7QJWX9CQf9lLg5uYpFdUaMk4_OkMGvtyXln_qUH50peH_hNSPGymT6GQy0uD6GlRtoAQTjnBHmLz1xUlO19m7lkvYrqARXVXRZ-QCdhaStKI3Th60uvb4aSy8JhxZus090aC8QhqdAi4lnQyEG_dHFLSdLU--mYeXVKCYdpR7t9tkIwXwQ_C7AlIsUIq3EO_sxPzP6gspTCsJoe2Ig0ohilaaQx9zik7nQEdlrfyU-0aTN7khZYe0g6cxyU35C_cYnTIRFPFCxEOrBPGZksswgRWPVgZhY0YsaCnVyvsipeM8BA_lzRghZ8zyZILYaDei80XRn-YvBNG2nRv1Bw5zsRDKmlCM'
+        print('pofile_name: '+str(bool(profile_name)))
         if profile_name: self.profile_id = self.get_profile_id_on_profile_name(profile_name=profile_name)
         else: self.profile_id = profile_name
         self.profile_name = profile_name
@@ -36,7 +38,7 @@ class WB_BROWSER():
     # DOLPHI ENTY METHODS
     def start_doplhin_profile(self,profile_name='') -> dict:
         self.activate_dolphin_window()
-        if profile_name:
+        if not self.profile_id:
             profile_id = self.get_profile_id_on_profile_name(profile_name)
             if type(profile_id) == {}:
                 return profile_id
@@ -149,40 +151,32 @@ class WB_BROWSER():
 
         browser = webdriver.Chrome(service=service,options=options)
         browser.set_page_load_timeout(10)
-        # browser.implicitly_wait(10)
-        # size = browser.get_window_size()
-        # print("Ширина окна:", size['width'])
-        # print("Высота окна:", size['height'])
         self.browser = browser
         if len(browser.window_handles) > 1:
             self.close_tabs_browser(browser=browser)
-        # if self.headless:
-        #     try:
-        #         self.browser.execute_script('window.resizeTo(1920, 1080);')
-        #     except:
-        #         print('ERROR: SET WINDOW SIZE ')
-
-        #         return False
 
         return browser
-    
-    # def check_proxy(self, profile:webdriver.Chrome):
-    #     try:
-    #         profile.get('https://www.wildberries.ru/')
-    #         time.sleep(1)
-    #         profile.find_elements(By.CLASS_NAME, 'product-card__link')[5]
-    #         return True
-    #     except Exception as ex:
-    #         if str(ex) == 'STOP':
-    #             raise Exception('STOP')
-    #         print('')
-    #         return False
 
     def get_profile_id_on_profile_name(self, profile_name):
         headers = {
             'Authorization': self.token
         }
         profile = requests.request("GET", 'https://dolphin-anty-api.com/browser_profiles?query=' + str(profile_name), headers=headers)
+       
+        profiles_str = list(map(lambda profile: profile['name'], profile.json()['data']))
+
+        if len(profiles_str) == 0:
+            profiles_str = ['error: not found..']
+        else:
+            profiles_str = str(profiles_str)
+
+        print(
+            "\n---------------------------------------------------------------------\n"
+            +
+            'RESPONSE FOR GET PROFILE BY NAME ' + profiles_str
+            +
+            "\n---------------------------------------------------------------------\n"
+        )
         if profile.json()['data'][0]['name'] == str(profile_name):
             return profile.json()['data'][0]['id']
         else:
@@ -233,7 +227,7 @@ if __name__ == '__main__':
             print(104)
     while count_scroll_px < height_scroll:
         if wb_browser.execute_script("return document.readyState") == 'complete':
-            print('complate')
+            print('complete')
             wb_browser.execute_script(f"window.scrollTo(0, {count_scroll_px})")
             count_scroll_px += 250
             height_scroll = int(wb_browser.execute_script("return document.getElementsByClassName('catalog-page__main')[0].scrollHeight"))

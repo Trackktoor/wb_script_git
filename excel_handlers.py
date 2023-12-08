@@ -1,6 +1,7 @@
 import openpyxl
 from openpyxl import Workbook
 import time
+import traceback
 
 
 class EXCEL_PARSER():
@@ -55,12 +56,14 @@ class EXCEL_REPORT():
         while True:
             try:
                 target_book = self.get_target_book()
-
-                target_book = self.get_target_book()
-        
+                # self.count_product = EXCEL_PARSER(book_name='Отчет.xlsx').get_values()
+                # print(self.count_product)
+                # self.count_product = self.count_product[len(self.count_product)-1]
+                # print(self.count_product)
+                print(info)
                 if info[4] == None: info[4] = ''
 
-                target_book.active.cell(target_book.active.max_row+1, column=1).value = self.count_product+1
+                target_book.active.cell(target_book.active.max_row+1, column=1).value = 1
                 target_book.save('Отчет.xlsx')
                 target_book.active.cell(target_book.active.max_row, column=2).value = info[1]
                 target_book.active.cell(target_book.active.max_row, column=3).value = info[2]
@@ -69,10 +72,11 @@ class EXCEL_REPORT():
                 target_book.active.cell(target_book.active.max_row, column=6).value = info[5]
                 target_book.active.cell(target_book.active.max_row, column=7).value = info[6]
                 target_book.save('Отчет.xlsx')
-                self.count_product += 1
                 break
-            except:
+            except Exception as ex:
                 time.sleep(2)
+                print('Возможно нужно закрыть отчет')
+                print(traceback.format_exc())
                 continue
 if __name__ == '__main__':
     # book = EXCEL_REPORT()

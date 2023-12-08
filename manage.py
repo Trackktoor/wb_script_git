@@ -87,7 +87,7 @@ class MANAGE_SCRIPT():
                 else:
                     self.wb_browser.stop_doplhin_profile()
                 if len(all_info) == 1 or self.target_profile=='':
-                    print('SystemExit')
+                    print('SystemExit//90')
                     raise SystemExit
                 return {'status':102}
             
@@ -106,7 +106,7 @@ class MANAGE_SCRIPT():
                 print('report - complate')
                 self.stop()
                 if len(all_info) == 1 or self.target_profile=='':
-                    print('SystemExit')
+                    print('SystemExit//109')
                     raise SystemExit
                 return {'status':101}
             
@@ -117,7 +117,7 @@ class MANAGE_SCRIPT():
                 result.append('OK')
                 self.report.add_product(result)
 
-                print(f'report - complate')
+                print('report - complate')
 
                 if self.wb_browser.browser != '':
                     self.stop()
@@ -125,7 +125,7 @@ class MANAGE_SCRIPT():
                     self.wb_browser.stop_doplhin_profile()
 
                 if len(all_info) == 1 or self.target_profile=='':
-                    print('SystemExit')
+                    print('SystemExit//128')
                     raise SystemExit
          
                 return {'status': 100}
@@ -145,7 +145,7 @@ class MANAGE_SCRIPT():
             if autobasket == 106:
                 self.fail_profiles.append(info)
                 i += 1
-                print('STATUS: 106')
+                print('STATUS: 106//148')
                 if self.wb_browser.browser != '':
                     self.stop()
                 else:
@@ -166,7 +166,7 @@ class MANAGE_SCRIPT():
                     self.stop()
                 else:
                     self.wb_browser.stop_doplhin_profile()
-                print('STATUS: 104')
+                print('STATUS: 104//169')
                 i += 1
                 continue
 
@@ -177,16 +177,14 @@ class MANAGE_SCRIPT():
                     self.stop()
                 else:
                     self.wb_browser.stop_doplhin_profile()
-                print('STATUS: 105 - start__process')
+                print('STATUS: 105 - start__process//180')
                 i += 1
 
             if autobasket['status'] == 102:
                 self.wb_browser.stop_doplhin_profile()
                 if len(all_info) == 1 or self.target_profile=='':
                     raise SystemExit
-            else:
-                
-                
+            else:    
                 if self.wb_browser.browser != '':
                     self.stop()
                     
@@ -194,7 +192,8 @@ class MANAGE_SCRIPT():
                     self.wb_browser.stop_doplhin_profile()
 
                 if len(all_info) == 1 or self.target_profile=='':
-                    print('SystemExit')
+                    print(autobasket)
+                    print('SystemExit//197')
                     raise SystemExit
                 i += 1
 
@@ -224,6 +223,7 @@ class MANAGE_SCRIPT():
             print(traceback.format_exc())
         # Цикл на обработу ошибок
         if len(self.fail_profiles) != 0:
+            print('цикл на обработку ошибок')
             wb_browser:WB_BROWSER = WB_BROWSER(profile_name='')
             self.wb_browser = wb_browser
             self.wb_browser.get_all_proxy()
@@ -238,7 +238,7 @@ class MANAGE_SCRIPT():
                         j = True
                         while j:
                             try:
-                                self.wb_browser.change_proxy_for_target_profile({'proxy[id]':proxy_id}, wb_browser.get_profile_id_on_profile_name(profile[1]))
+                                # self.wb_browser.change_proxy_for_target_profile({'proxy[id]':proxy_id}, wb_browser.get_profile_id_on_profile_name(profile[1]))
                                 self.wb_browser.auhorization_dolphin_anty()
                                 time.sleep(1)
                                 autobasket_for_one_product = self.autobasket_for_one_product(profile, all_info)
@@ -248,7 +248,7 @@ class MANAGE_SCRIPT():
                                         self.stop()
                                     else:
                                         self.wb_browser.stop_doplhin_profile()
-                                    print('STATUS: 106')
+                                    print('STATUS: 106//251')
                                     continue
                                 status = autobasket_for_one_product['status']
                                 if status == 105:
@@ -271,7 +271,7 @@ class MANAGE_SCRIPT():
                                     else:
                                         self.wb_browser.stop_doplhin_profile()
                                     if len(all_info) == 1 or self.target_profile=='':
-                                        print('SystemExit')
+                                        print('SystemExit//274')
                                         raise SystemExit
                                     
                                     break
@@ -294,11 +294,11 @@ class MANAGE_SCRIPT():
                             else:
                                 self.wb_browser.stop_doplhin_profile()
                             if len(all_info) == 1 or self.target_profile=='':
-                                print('SystemExit')
+                                print('SystemExit//297')
                                 raise SystemExit
                             break
                 else:
-                    self.wb_browser.change_proxy_for_target_profile({'proxy[id]':work_proxy}, profile[1])
+                    # self.wb_browser.change_proxy_for_target_profile({'proxy[id]':work_proxy}, profile[1])
                     status = ''
                     j = True
                     while j:
@@ -306,7 +306,7 @@ class MANAGE_SCRIPT():
                             autobasket_for_one_product = self.autobasket_for_one_product(profile, all_info)
                             status = autobasket_for_one_product['status']
                             if status == 105:
-                                print('STATUS: 105 - else')
+                                print('STATUS: 105 - else//309')
                                 time.sleep(0.5)
                                 print('Профиль недостпуен, пытаюсь подключиться...')
                                 
@@ -336,7 +336,7 @@ class MANAGE_SCRIPT():
                                 self.wb_browser.stop_doplhin_profile()
                     
                     if status == 102:
-                        print('STATUS: 102')
+                        print('STATUS: 102//339')
                         i += 1
                         self.fail_profiles.remove(profile)
                         
@@ -345,12 +345,12 @@ class MANAGE_SCRIPT():
                         else:
                             self.wb_browser.stop_doplhin_profile()
                         if len(all_info) == 1 or self.target_profile=='':
-                            print('SystemExit')
+                            print('SystemExit//348')
                             raise SystemExit
                         continue
                     
                     if status == 103:
-                        print('STATUS: 103')
+                        print('STATUS: 103//353')
                         # result = [item for item in profile if item != None]
                         # result.append(f'Ошибка: не добавлен в корзину')
                         # self.report.add_product(result)
@@ -364,7 +364,7 @@ class MANAGE_SCRIPT():
                         else:
                             self.wb_browser.stop_doplhin_profile()
                         if len(all_info) == 1 or self.target_profile=='':
-                            print('SystemExit')
+                            print('SystemExit//367')
                             raise SystemExit
                     else:
                         print('PT: 101,103')
@@ -398,30 +398,51 @@ class ADD_ITEM_IN_BASKET():
     def search(self):
         text_in_search = True
         stop = True
+        self.wb_browser.browser.set_window_size(1920,1080)
         wait: WebDriverWait = WebDriverWait(self.wb_browser.browser, 20, poll_frequency=0.1)
         search_input = wait.until(EC.visibility_of_element_located(
             (By.ID, 'searchInput')
         ))
+        
+        wait: WebDriverWait = WebDriverWait(self.wb_browser.browser, 20, poll_frequency=0.1)
+        wait.until(EC.visibility_of_element_located(
+            (By.CSS_SELECTOR, 'a.j-wba-header-item[href="/lk/myorders/delivery"]')
+        ))
 
-        i = 0
         while text_in_search and stop:
             search_input.clear()
             if ' ' in self.search_text:
                 arr_words = self.search_text.split(' ')
                 for word in arr_words:
                     search_input.send_keys(word + ' ')
-                    time.sleep(1)
+                    time.sleep(0.5)
                 search_input_text = self.wb_browser.browser.execute_script("return document.getElementById('searchInput').value")
+                try:
+                    wait: WebDriverWait = WebDriverWait(self.wb_browser.browser, 10, poll_frequency=0.1)
+                    search_img = wait.until(EC.visibility_of_element_located(
+                        (By.CLASS_NAME, 'search-catalog__btn-wrap')
+                    ))
+                except:
+                    continue
+                try:
+                    wait: WebDriverWait = WebDriverWait(self.wb_browser.browser, 10, poll_frequency=0.1)
+                    search_img = wait.until(EC.visibility_of_element_located(
+                        (By.CLASS_NAME, 'search-catalog__btn-wrap')
+                    ))
+                except:
+                    continue
                 if search_input_text.strip() == self.search_text.strip():
                     text_in_search = False
-                else:
-                    i += 1
-                    if i == 3:
-                        return {'status': 104}
             else:
                 search_input.send_keys(self.search_text)
-                time.sleep(1)
                 search_input_text = self.wb_browser.browser.execute_script("return document.getElementById('searchInput').value")
+                try:
+                    wait: WebDriverWait = WebDriverWait(self.wb_browser.browser, 10, poll_frequency=0.1)
+                    search_img = wait.until(EC.visibility_of_element_located(
+                        (By.CLASS_NAME, 'search-catalog__btn-wrap')
+                    ))
+                except:
+                    continue
                 if search_input_text.strip() == self.search_text.strip():
                     text_in_search = False
                     
@@ -433,7 +454,7 @@ class ADD_ITEM_IN_BASKET():
             wait: WebDriverWait = WebDriverWait(self.wb_browser.browser, 20, poll_frequency=0.1)
             height_scroll = wait.until(EC.visibility_of_element_located(
                 (By.CLASS_NAME, 'catalog-page__main')
-            ))
+            ))  
             height_scroll = int(self.wb_browser.browser.execute_script("return document.getElementsByClassName('catalog-page__main')[0].scrollHeight"))
         except:
             return {'status': 104}
@@ -443,7 +464,6 @@ class ADD_ITEM_IN_BASKET():
             height_scroll = int(self.wb_browser.browser.execute_script("return document.getElementsByClassName('catalog-page__main')[0].scrollHeight"))
             time.sleep(0.5)
         self.wb_browser.browser.execute_script(f"window.scrollTo(0, 200)")
-
     def get_all_products(self):
         try:
             wait: WebDriverWait = WebDriverWait(self.wb_browser.browser, 20, poll_frequency=0.1)
@@ -457,10 +477,9 @@ class ADD_ITEM_IN_BASKET():
             self.wb_browser.start_doplhin_profile()
             self.wb_browser.stop()
             return {'status': 104}
-        
         wait: WebDriverWait = WebDriverWait(self.wb_browser.browser, 20, poll_frequency=0.1)
         proucts = wait.until(EC.visibility_of_all_elements_located(
-            (By.CLASS_NAME, 'product-card')
+            (By.CSS_SELECTOR, 'article.product-card')
         ))
         # proucts = container.find_elements(By.CLASS_NAME, 'product-card')
         return proucts
@@ -477,9 +496,10 @@ class ADD_ITEM_IN_BASKET():
         product_clicked = True
         while product_clicked:
             product.click()
-            time.sleep(1)
+            time.sleep(2)
             if '#' in self.wb_browser.browser.current_url:
-                product.click()
+                self.wb_browser.browser.get(self.wb_browser.browser.current_url)
+                continue
             else:
                 product_clicked = False
         self.wb_browser.browser.execute_script('window.scrollTo(0,0)')
@@ -488,9 +508,14 @@ class ADD_ITEM_IN_BASKET():
         # self.check_reviews()
         # self.check_reviews_text()
         self.check_product_photos()
+        print('check_product_photos')
 
         if self.size != None:
-            size_list = self.wb_browser.browser.find_elements(By.CLASS_NAME, 'sizes-list')[0]
+            wait = WebDriverWait(self.wb_browser.browser, 20, 0.3)
+            
+            # size_list = self.wb_browser.browser.find_elements(By.CLASS_NAME, 'sizes-list')[0]
+            time.sleep(3)
+            size_list =  wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "ul.sizes-list")))
             sizes = size_list.find_elements(By.TAG_NAME, 'li')
             for size in sizes:
                 label = size.find_element(By.TAG_NAME, 'label')
@@ -498,29 +523,42 @@ class ADD_ITEM_IN_BASKET():
                     label_classes = label.get_attribute('class')
                     if  (len(label_classes.split(' ')) == 2 or label_classes == 'j-size sizes-list__button active') and label_classes != 'j-size sizes-list__button disabled':
                         label.click()
+                        print('size_clicked')
+                        self.wb_browser.browser.save_screenshot("screenshot.png")
                         try:
-                            wait = WebDriverWait(self.wb_browser.browser, 20)
                             button_not_clicable = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, "button.btn-main")))[2]
                             button = wait.until(EC.element_to_be_clickable(button_not_clicable))
 
                             button.click()
-                        except:
-                            return {'status': 106}
+                            print('cilick_button_add_in_basket')
+                        except Exception as ex:
+                            try:
+                                button_not_clicable = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, "button.btn-main")))[1]
+                                button = wait.until(EC.element_to_be_clickable(button_not_clicable))
+
+                                button.click()
+                                print('cilick_button_add_in_basket')
+                            except:
+                                print(ex)
+                                return {'status': 106}
+                            
                         if not ('hide' in button.get_attribute('class').split(' ')):
                             while True:
-                                button.click()
-                                time.sleep(0.5)
-                                if not 'hide' in button.get_attribute('class').split(' '):
+                                try:
+                                    button_not_clicable.click()
+                                    time.sleep(0.5)
+                                    if not 'hide' in button.get_attribute('class').split(' '):
+                                        continue
+                                    else:
+                                        break
+                                except:
                                     continue
-                                else:
-                                    break
-                                
                         time.sleep(1)
                         return True
                     else:
                         continue
         else:
-            wait = WebDriverWait(self.wb_browser.browser, 20)
+            wait = WebDriverWait(self.wb_browser.browser, 20, 0.3)
             button_not_clicable = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, "button.btn-main")))[2]
             button = wait.until(EC.element_to_be_clickable(button_not_clicable))
 
@@ -553,7 +591,6 @@ class ADD_ITEM_IN_BASKET():
             for product in products:
                 if self.product_is_valid(product):
                     return product
-            print(conunt_page)
             next = self.next_page()
 
             if next == 'max':
