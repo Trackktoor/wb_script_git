@@ -9,8 +9,8 @@ import traceback
 class WB_BROWSER():
 
     def __init__(self, profile_name='', headless=False, quick_collection=False) -> None:    
-        self.token = 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIxIiwianRpIjoiNGIyZTU5MGNhMjc1NmUzZjUzYzRjNTMyOGUzZjRkZjRiOWJmMDNiNmRjZWM1YTQ5MDUxNjJlMDc4OTNkYTkzMThhMDhmNzZjZDE3ODM0MTgiLCJpYXQiOjE2OTkwNDM3MzguMDkxMjI5LCJuYmYiOjE2OTkwNDM3MzguMDkxMjMsImV4cCI6MTczMDU3OTczOC4wODIyNCwic3ViIjoiMjg3MTQwNCIsInNjb3BlcyI6W119.SpVpJI9F9fI4ljRENdl0bL6EHm_6bI62TNGQ6Qijsc7HUGB2iec3DzsajT6wQWqk5GvOnHGA86O-rlVG-bFJYart79Ep9bPfgWZL5hj0UsazmOfXJW1cr1BWtWGubxRoKfQXFz_qMxoK0p193lpuA4E-DBxoaKFqj_TDk6wIh4dtJrmiDojGhwv6zpIJxim9wR9m1669rRvZm-6DfD8ndUx9Ml5MMW4ubAeabfR4opwa0nGyccbwKxESZbAwYBDuDkmVkbZVFxhRdFVUGXUHfAaS7MKJJN6bplUHkGKxbSZriL6xP8_mCDi-OvYhJITQntGCO0JbI3mpoC7QJWX9CQf9lLg5uYpFdUaMk4_OkMGvtyXln_qUH50peH_hNSPGymT6GQy0uD6GlRtoAQTjnBHmLz1xUlO19m7lkvYrqARXVXRZ-QCdhaStKI3Th60uvb4aSy8JhxZus090aC8QhqdAi4lnQyEG_dHFLSdLU--mYeXVKCYdpR7t9tkIwXwQ_C7AlIsUIq3EO_sxPzP6gspTCsJoe2Ig0ohilaaQx9zik7nQEdlrfyU-0aTN7khZYe0g6cxyU35C_cYnTIRFPFCxEOrBPGZksswgRWPVgZhY0YsaCnVyvsipeM8BA_lzRghZ8zyZILYaDei80XRn-YvBNG2nRv1Bw5zsRDKmlCM'
-        print('pofile_name: '+str(bool(profile_name)))
+        self.token = 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIxIiwianRpIjoiNDc2OWYzMDljNzgxNDBhOTNhZTU3YzMyN2NmMDJkY2JmZjAzY2YyNGM5N2RiMDQ3MmMxNDZmZDcyNDk1MGU1NmQwYjdlNDY5Y2FjOWJmZjAiLCJpYXQiOjE3MDIyMjY0NTYuODkyMTUyLCJuYmYiOjE3MDIyMjY0NTYuODkyMTU1LCJleHAiOjE3MDQ4MTg0NTYuODc4NzU4LCJzdWIiOiIyMTI2NjUyIiwic2NvcGVzIjpbXX0.tI9ag1LFtAQgZL8M1PCNVpZFP6Mg7epVofhDIZs2PdfBZjE4zLR6eor69RhRvnhsT0OeMcWUwlfJEu2LZ1k2bLoOwRKjVbPOZu5ORm7henNIY4cQUi8kA7Vig12XEPSgdyGgTKEnzzOB_GmVoud-oxxcY7JY0zvqWVoy_IXQB7W-GkhARD_kXmr8ODY_DcPEvGCtfNQagGqkhXcGzFbbFCPrkzGIJ6Q1hX8N5RZR2dp52m7RmibbtnipxB3MjADzrNgpqTFNozLD8ia32G8OfA5OQSYogRYDBMUtgDJBnRw-IWQumvqNjpkDIwp4um932RBP03X2fBALoExqFcaHoh6oVAEQhoaRvRWnXvwCwrkgoSxm5D_fsMoBcoGeTNe3yurwljK7NNf47aRyGVUuke6vsWutsnfLChOc7giHLXE2K6_QUvGHkP7_4vuq6cOXGfI-pM5gBagvgxOedTBj4O08HfucnwZzvlekXYzb0M56dTuH1xWz8lgs8oC-uMJkp5GqUJ63JMcWcUcQhpNzsjUn34ZDrIA2CKdiCnG7R7soGbgnB6crEmGOEew6CdCz4XakMcW1tA3mk-0Kbb3Th8ydHFMausBaW6Na5gyt2fMi8VG9txRaITwlHP2Oorj1ebH1L2raOA3qoCJ9yUicgDwF8KKE589qCoCK6fKbZUQ'
+        # print('pofile_name: '+str(bool(profile_name)))
         if profile_name: self.profile_id = self.get_profile_id_on_profile_name(profile_name=profile_name)
         else: self.profile_id = profile_name
         self.profile_name = profile_name
@@ -29,7 +29,6 @@ class WB_BROWSER():
             pass
     def auhorization_dolphin_anty(self):
         try:
-            self.activate_dolphin_window()
             response = requests.post('http://localhost:3001/v1.0/auth/login-with-token', data={'token':self.token.split(' ')[1]})
         except:
             print(traceback.format_exc())
@@ -37,7 +36,6 @@ class WB_BROWSER():
         return response.json()
     # DOLPHI ENTY METHODS
     def start_doplhin_profile(self,profile_name='') -> dict:
-        self.activate_dolphin_window()
         if not self.profile_id:
             profile_id = self.get_profile_id_on_profile_name(profile_name)
             if type(profile_id) == {}:
@@ -49,7 +47,6 @@ class WB_BROWSER():
                     response = requests.get(self.req_url_start + '&headless=1')
                     if 'error' in response.json().keys():
                         if 'already running' in response.json()['error']:
-                            self.activate_dolphin_window()
                             time.sleep(1)
                             self.stop_doplhin_profile()
                             print('ERROR: DUBLICATE')
@@ -61,7 +58,6 @@ class WB_BROWSER():
                     response = requests.get(self.req_url_start)
                     if 'error' in response.json().keys():
                         if 'already running' in response.json()['error']:
-                            self.activate_dolphin_window()
                             self.stop_doplhin_profile()
                             print('ERROR: DUBLICATE')
                             time.sleep(1)
@@ -78,16 +74,15 @@ class WB_BROWSER():
         
     def stop_doplhin_profile(self) -> dict:
         try:
-            self.activate_dolphin_window()
             response = requests.get(self.req_url_stop)
-            len_line = len('PROFILE ' + str(self.profile_name) +  ' STOP: ' + str(response.json()))
-            print(
-                f"\n{ '-' * len_line }\n" +
-                'PROFILE ' + str(self.profile_name) +  ' STOP: ' + str(response.json()) +
-                f"\n{ '-' * len_line }\n"
-                )
+            # len_line = len('PROFILE ' + str(self.profile_name) +  ' STOP: ' + str(response.json()))
+            # print(
+            #     f"\n{ '-' * len_line }\n" +
+            #     'PROFILE ' + str(self.profile_name) +  ' STOP: ' + str(response.json()) +
+            #     f"\n{ '-' * len_line }\n"
+            #     )
         except:
-            print(traceback.format_exc())
+            # print(traceback.format_exc())
             return False
         return response.json()
     
@@ -109,24 +104,30 @@ class WB_BROWSER():
     def initial_selenium_browser(self, profile_name='') -> webdriver.Chrome:
         no_unauthorized = True
         port = ''
-        print(f'profile name in string: "{self.profile_name}"')
         while no_unauthorized:
             try:
                 service = Service('chromedriver-windows-x64.exe')
                 response = self.start_doplhin_profile(profile_name)
-                len_line = len('PROFILE ' + str(self.profile_name) +  ' START: ' + str(response))
-                print(
-                    f"\n{ '-' * len_line }\n" +
-                    'PROFILE ' + str(self.profile_name) +  ' START: ' + str(response) +
-                    f"\n{ '-' * len_line }\n"
-                )
+                # len_line = len('PROFILE ' + str(self.profile_name) +  ' START: ' + str(response))
+                # print(
+                #     f"\n{ '-' * len_line }\n" +
+                #     'PROFILE ' + str(self.profile_name) +  ' START: ' + str(response) +
+                #     f"\n{ '-' * len_line }\n"
+                # )
                 if 'error' in response.keys():
                     if response['error'] == 'Error: Ошибка проверки соединения с прокси':
                         return {'status': 104}
                     if response['error'] == 'unauthorized':
-                        self.auhorization_dolphin_anty()
-                        time.sleep(2)
+                        time.sleep(5)
                         continue
+                    if 'ggr:' in response['error']:
+                        time.sleep(5)
+                        continue
+                    if 'EPERM' in response['error']:
+                        print(f'"EPEM" in {response["message"]} == {"EPERM" in response["message"]}')
+                        return {'status':108}
+                print(response)
+
                 port = response['automation']['port']
                 break
             except Exception as ex:
@@ -135,9 +136,8 @@ class WB_BROWSER():
                 except:
                     print('ERROR: ANTY NOT FOUND')
                     return False
+                print('TRACEBACK')
                 print(traceback.format_exc())
-                print('ERROR: BAD PROFIEL - RESTART')
-                return False
 
         options = webdriver.ChromeOptions()
         options.debugger_address = f'127.0.0.1:{port}'
@@ -170,13 +170,13 @@ class WB_BROWSER():
         else:
             profiles_str = str(profiles_str)
 
-        print(
-            "\n---------------------------------------------------------------------\n"
-            +
-            'RESPONSE FOR GET PROFILE BY NAME ' + profiles_str
-            +
-            "\n---------------------------------------------------------------------\n"
-        )
+        # print(
+        #     "\n---------------------------------------------------------------------\n"
+        #     +
+        #     'RESPONSE FOR GET PROFILE BY NAME ' + profiles_str
+        #     +
+        #     "\n---------------------------------------------------------------------\n"
+        # )
         if profile.json()['data'][0]['name'] == str(profile_name):
             return profile.json()['data'][0]['id']
         else:
@@ -209,8 +209,8 @@ class WB_BROWSER():
         return all_proxys.json()['data']
 
     def stop(self) -> None:
-        self.stop_doplhin_profile()
         self.browser.quit()
+        self.stop_doplhin_profile()
 
 # print(WB_BROWSER('182637111').get_all_proxy()[0]['id'])
 
@@ -222,15 +222,16 @@ if __name__ == '__main__':
             height_scroll = int(wb_browser.execute_script("return document.getElementsByClassName('catalog-page__main')[0].scrollHeight"))
             break
         except:
-            print( wb_browser.execute_script("return document.readyState"))
+            # print( wb_browser.execute_script("return document.readyState"))
             time.sleep(0.5)
-            print(104)
+            # print(104)
     while count_scroll_px < height_scroll:
         if wb_browser.execute_script("return document.readyState") == 'complete':
-            print('complete')
+            # print('complete')
             wb_browser.execute_script(f"window.scrollTo(0, {count_scroll_px})")
             count_scroll_px += 250
             height_scroll = int(wb_browser.execute_script("return document.getElementsByClassName('catalog-page__main')[0].scrollHeight"))
             time.sleep(0.4)
         else:
-            print('wait..')
+            # print('wait..')
+            pass

@@ -5,6 +5,7 @@ from multiprocessing import Pool, Process
 from typing import Any
 import psutil
 from threading import Thread
+import win32gui
 from excel_handlers import *
 from tkinter import filedialog
 import tkinter.messagebox as mb
@@ -12,9 +13,12 @@ import sys
 import os
 import shutil
 import threading
+import requests
 from manage import MANAGE_SCRIPT
 from browser_handlers import WB_BROWSER
 
+
+work = True
 
 def start_autobasket(max_pages_entry='', target_profile='', headless=False):
     
@@ -158,8 +162,22 @@ class WB_PROMOTER(tkinter.Frame):
 
         self.entry_setting_pages.insert(index=0,string='25')
 
+    def activate_dolphin(self):
+        while work:
+            try:
+                hwnd = win32gui.FindWindow(None,'Dolphin{anty}')  # Должно вернуть hwnd последнего активного окна
+                win32gui.SetForegroundWindow(hwnd)
+                requests.post('http://localhost:3001/v1.0/auth/login-with-token', data={'token':'eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIxIiwianRpIjoiNDc2OWYzMDljNzgxNDBhOTNhZTU3YzMyN2NmMDJkY2JmZjAzY2YyNGM5N2RiMDQ3MmMxNDZmZDcyNDk1MGU1NmQwYjdlNDY5Y2FjOWJmZjAiLCJpYXQiOjE3MDIyMjY0NTYuODkyMTUyLCJuYmYiOjE3MDIyMjY0NTYuODkyMTU1LCJleHAiOjE3MDQ4MTg0NTYuODc4NzU4LCJzdWIiOiIyMTI2NjUyIiwic2NvcGVzIjpbXX0.tI9ag1LFtAQgZL8M1PCNVpZFP6Mg7epVofhDIZs2PdfBZjE4zLR6eor69RhRvnhsT0OeMcWUwlfJEu2LZ1k2bLoOwRKjVbPOZu5ORm7henNIY4cQUi8kA7Vig12XEPSgdyGgTKEnzzOB_GmVoud-oxxcY7JY0zvqWVoy_IXQB7W-GkhARD_kXmr8ODY_DcPEvGCtfNQagGqkhXcGzFbbFCPrkzGIJ6Q1hX8N5RZR2dp52m7RmibbtnipxB3MjADzrNgpqTFNozLD8ia32G8OfA5OQSYogRYDBMUtgDJBnRw-IWQumvqNjpkDIwp4um932RBP03X2fBALoExqFcaHoh6oVAEQhoaRvRWnXvwCwrkgoSxm5D_fsMoBcoGeTNe3yurwljK7NNf47aRyGVUuke6vsWutsnfLChOc7giHLXE2K6_QUvGHkP7_4vuq6cOXGfI-pM5gBagvgxOedTBj4O08HfucnwZzvlekXYzb0M56dTuH1xWz8lgs8oC-uMJkp5GqUJ63JMcWcUcQhpNzsjUn34ZDrIA2CKdiCnG7R7soGbgnB6crEmGOEew6CdCz4XakMcW1tA3mk-0Kbb3Th8ydHFMausBaW6Na5gyt2fMi8VG9txRaITwlHP2Oorj1ebH1L2raOA3qoCJ9yUicgDwF8KKE589qCoCK6fKbZUQ'})
+                time.sleep(5)
+            except:
+                time.sleep(5)
+                pass
+
     def threads_of_multiprocessing(self,number_of_accounts):
-            print(f'Active th: {threading.active_count()}')
+            global work
+            threading.Thread(target=self.activate_dolphin).start()
+            self.master.btn_load2.config(text='Работаю')
+            self.master.btn_load2.config(state=tkinter.DISABLED) 
             """ Запуск потоков """
             #  очистка self.infos от пустых элементов
             res = []
@@ -175,53 +193,33 @@ class WB_PROMOTER(tkinter.Frame):
             # Заполняем наш словарь по его ключам аккаунтами
             for account in self.infos:
                 dict_on_unic_name[account[1]].append(account)
-            print(dict_on_unic_name)
 
             # Переменная для активных потоков
             active_threads = {}
             # Цикл будет работать пока хотя бы в одном из значение ключей словаря будет элемент в списке
+
             while max(list(map(lambda arr_in_dict: len(dict_on_unic_name[arr_in_dict]), dict_on_unic_name))) != 0:
                 """ Проверка на живые активные поток и их чистка """
-                keys_to_remove = list(active_threads.keys())
-                for th in keys_to_remove:
-                    if not active_threads[th].is_alive():
-                        del active_threads[th]
+                # keys_to_remove = list(active_threads.keys())
+                active_threads = {k: v for k, v in active_threads.items() if v.is_alive()}
+                # for th in keys_to_remove:
+                    # if not active_threads[th].is_alive():
+                    #     del active_threads[th]
                 """ Запуск потока если для него есть место и нет потока с таким же профилем """
                 for name in unic_name:
-                    if threading.active_count()-2 < number_of_accounts:
-                        if len(dict_on_unic_name[name]) > 0 and name not in active_threads.keys():
+                    if threading.active_count()-3 < number_of_accounts:
+                        if len(dict_on_unic_name[name]) > 0 and not (name in active_threads.keys()):
                             el = dict_on_unic_name[name].pop(0)
                             thred = threading.Thread(target=self.loading_body, args=[list(el)])
                             thred.start()
                             active_threads[name]=thred
-                            print(active_threads.keys())
-            # WB_BROWSER().auhorization_dolphin_anty()
-            # while len(self.infos) != 0:
-            #     i = 0
-            #     if len(self.infos) - number_of_accounts < 0:
-            #         number_of_accounts = len(self.infos)
-            #     while i < number_of_accounts:
-            #             if len(self.infos) == 0:
-            #                 self.master.btn_load2.config(text='Старт')
-            #                 self.master.btn_load2.config(state=tkinter.NORMAL)                        
-            #                 return
-                        
-            #             thread = HackThread(self.loading_body(list(self.infos[0])))
-            #             thread.start()
-            #             print('\n__START_THREAD__\n')
-            #             self.threads.append(thread)
-            #             self.infos.remove(self.infos[0])
-            #             i += 1
-                
-            #     for thread in self.threads:
-            #         thread.join()
-            #     print('\n__FINISH__\n')
-            #     if len(self.infos) == 0:
-            #         self.master.btn_load2.config(text='Старт')
-            #         self.master.btn_load2.config(state=tkinter.NORMAL)                    
-            #         return
-            self.master.btn_load2.config(text='Старт')
-            self.master.btn_load2.config(state=tkinter.NORMAL)    
+            while True:
+                if threading.active_count() <= 3:
+                    work = False
+                    self.master.btn_load2.config(text='Старт')
+                    self.master.btn_load2.config(state=tkinter.NORMAL)   
+                    break
+            
 
     def start_loading(self):
 
@@ -261,13 +259,15 @@ class WB_PROMOTER(tkinter.Frame):
     def loading_body(self, info=''):
             headless = self.entry_setting_browser_hidden.is_checked
             if info:
-                thread = HackThread(name='loading_body',kwargs={'max_pages_entry': self.entry_setting_pages.get(), 'target_profile': info, 'headless':headless}, target=start_autobasket)
-                self.threads.append(thread)
-                thread.start()
+                start_autobasket(self.entry_setting_pages.get(), info,headless)
+                # thread = HackThread(name='loading_body',kwargs={'max_pages_entry': self.entry_setting_pages.get(), 'target_profile': info, 'headless':headless}, target=start_autobasket)
+                # self.threads.append(thread)
+                # thread.start()
             else:
-                thread = HackThread(name='loading_body',kwargs={'max_pages_entry': self.entry_setting_pages.get(), 'headless':headless}, target=start_autobasket)
-                self.process.append(thread)
-                thread.start()
+                start_autobasket(self.entry_setting_pages.get(),headless=headless)
+                # thread = HackThread(name='loading_body',kwargs={'max_pages_entry': self.entry_setting_pages.get(), 'headless':headless}, target=start_autobasket)
+                # self.process.append(thread)
+                # thread.start()
 
 
 if __name__ == '__main__':

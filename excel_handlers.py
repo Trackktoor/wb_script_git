@@ -49,8 +49,13 @@ class EXCEL_REPORT():
         return new_book
     
     def get_target_book(self):
-        wb = openpyxl.load_workbook('Отчет.xlsx')
-        return wb
+        while True:
+            try:
+                wb = openpyxl.load_workbook('Отчет.xlsx')
+                return wb
+            except:
+                time.sleep(1)
+                continue
     
     def add_product(self, info):
         while True:
@@ -60,19 +65,31 @@ class EXCEL_REPORT():
                 # print(self.count_product)
                 # self.count_product = self.count_product[len(self.count_product)-1]
                 # print(self.count_product)
-                print(info)
-                if info[4] == None: info[4] = ''
+                if len(info) == 7:
+                    if info[4] == None: info[4] = ''
 
-                target_book.active.cell(target_book.active.max_row+1, column=1).value = 1
-                target_book.save('Отчет.xlsx')
-                target_book.active.cell(target_book.active.max_row, column=2).value = info[1]
-                target_book.active.cell(target_book.active.max_row, column=3).value = info[2]
-                target_book.active.cell(target_book.active.max_row, column=4).value = info[3]
-                target_book.active.cell(target_book.active.max_row, column=5).value = info[4]
-                target_book.active.cell(target_book.active.max_row, column=6).value = info[5]
-                target_book.active.cell(target_book.active.max_row, column=7).value = info[6]
-                target_book.save('Отчет.xlsx')
-                break
+                    target_book.active.cell(target_book.active.max_row+1, column=1).value = 1
+                    target_book.save('Отчет.xlsx')
+                    target_book.active.cell(target_book.active.max_row, column=2).value = info[1]
+                    target_book.active.cell(target_book.active.max_row, column=3).value = info[2]
+                    target_book.active.cell(target_book.active.max_row, column=4).value = info[3]
+                    target_book.active.cell(target_book.active.max_row, column=5).value = info[4]
+                    target_book.active.cell(target_book.active.max_row, column=6).value = info[5]
+                    target_book.active.cell(target_book.active.max_row, column=7).value = info[6]
+                    target_book.save('Отчет.xlsx')
+                    break
+                else:
+                    if info[4] == None: info[4] = ''
+
+                    target_book.active.cell(target_book.active.max_row+1, column=1).value = 1
+                    target_book.save('Отчет.xlsx')
+                    target_book.active.cell(target_book.active.max_row, column=2).value = info[1]
+                    target_book.active.cell(target_book.active.max_row, column=3).value = info[2]
+                    target_book.active.cell(target_book.active.max_row, column=4).value = info[3]
+                    target_book.active.cell(target_book.active.max_row, column=5).value = info[4]
+                    target_book.active.cell(target_book.active.max_row, column=6).value = info[5]
+                    target_book.save('Отчет.xlsx')
+                    break
             except Exception as ex:
                 time.sleep(2)
                 print('Возможно нужно закрыть отчет')
