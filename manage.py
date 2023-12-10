@@ -433,11 +433,12 @@ class ADD_ITEM_IN_BASKET():
         wait: WebDriverWait = WebDriverWait(self.wb_browser.browser, 20, poll_frequency=0.1)
         try:
             wait.until(EC.visibility_of_element_located(
-                (By.CSS_SELECTOR, 'a.j-wba-header-item[href="/services/besplatnaya-dostavka?desktop=1#terms-delivery"]')
+                (By.CSS_SELECTOR, 'a.j-wba-header-item[href="/lk/myorders/delivery"]')
             ))
+
         except:
             wait.until(EC.visibility_of_element_located(
-                (By.CSS_SELECTOR, 'a.j-wba-header-item[href="/lk/myorders/delivery"]')
+                (By.CSS_SELECTOR, 'a.j-wba-header-item[href="/services/besplatnaya-dostavka?desktop=1#terms-delivery"]')
             ))
         while text_in_search and stop:
             search_input.clear()
